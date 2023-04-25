@@ -6,21 +6,20 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"runtime/debug"
-	"strings"
 
 	"github.com/archway-network/relayer_exporter/collector"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func getVersion() string {
-	version, ok := debug.ReadBuildInfo()
-	if !ok {
-		return "unknown"
-	}
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
 
-	return strings.TrimSpace(version.Main.Version)
+func getVersion() string {
+	return fmt.Sprintf("version: %s commit: %s date: %s", version, commit, date)
 }
 
 func main() {
