@@ -1,0 +1,46 @@
+---
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - id: release-please
+        name: Release Please
+        uses: google-github-actions/release-please-action@v3
+        with:
+          release-type: go
+          package-name: relayer_exporter
+          changelog-types: >-
+            [
+              {"type":"feat","section":"Features","hidden":false},
+              {"type":"fix","section":"Bug Fixes","hidden":false},
+              {"type":"chore","section":"Miscellaneous","hidden":true}
+            ]
+      - name: Checkout
+        uses: actions/checkout@v3
+        if: steps.release-please.outputs.release_created
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        if: steps.release-please.outputs.release_created
+        with:
+          go-version-file: go.mod
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v4
+        if: steps.release-please.outputs.release_created
+        with:
+          args: release --clean --config .goreleaser.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
