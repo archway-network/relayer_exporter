@@ -14,7 +14,7 @@ var (
 		nil, nil,
 	)
 
-	client_expiry = prometheus.NewDesc(
+	clientExpiry = prometheus.NewDesc(
 		"cosmos_relayer_client_expiry",
 		"Returns light client expiry in unixtime.",
 		[]string{"chain_id", "path"}, nil,
@@ -39,7 +39,7 @@ func (rc RelayerCollector) Collect(ch chan<- prometheus.Metric) {
 
 	for _, c := range clients {
 		ch <- prometheus.MustNewConstMetric(
-			client_expiry,
+			clientExpiry,
 			prometheus.GaugeValue,
 			float64(c.ExpiresAt.Unix()),
 			[]string{c.ChainID, c.Path}...,

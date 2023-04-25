@@ -22,7 +22,6 @@ func TestGetPaths(t *testing.T) {
 	b.WriteString(outStr)
 
 	res, err := parsePaths(&b)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +46,6 @@ client 07-tendermint-401 (axelar-testnet-lisbon-3) expires in 3h13m52s (14 Apr 2
 	b.WriteString(outStr)
 
 	res, err := parseClientsForPath(path, &b)
-
 	if err != nil {
 		t.Fatal(err)
 	}
