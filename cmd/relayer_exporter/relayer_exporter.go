@@ -3,11 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
 	"github.com/archway-network/relayer_exporter/pkg/collector"
+	log "github.com/archway-network/relayer_exporter/pkg/logger"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -40,6 +40,6 @@ func main() {
 	http.Handle("/metrics", promhttp.Handler())
 
 	addr := fmt.Sprintf(":%d", *port)
-	log.Printf("Starting server on addr: %s\n", addr)
-	log.Fatal(http.ListenAndServe(addr, nil))
+	log.Info(fmt.Sprintf("Starting server on addr: %s", addr))
+	log.Fatal(http.ListenAndServe(addr, nil).Error())
 }
