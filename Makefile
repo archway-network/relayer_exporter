@@ -29,3 +29,10 @@ test-cover:
 lint:
 	@golangci-lint run
 	@go mod verify
+
+.PHONY: update
+update:
+	go get -u -d ./...
+	@go mod tidy
+	@go build -o "$(TMPDIR)/relayer_exporter" cmd/relayer_exporter/relayer_exporter.go
+	@git diff -- go.mod go.sum
