@@ -1,9 +1,8 @@
 package collector
 
 import (
-	"log"
-
-	"github.com/archway-network/relayer_exporter/relayer"
+	log "github.com/archway-network/relayer_exporter/pkg/logger"
+	"github.com/archway-network/relayer_exporter/pkg/relayer"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -14,7 +13,7 @@ var (
 		nil, nil,
 	)
 
-	client_expiry = prometheus.NewDesc(
+	clientExpiry = prometheus.NewDesc(
 		"cosmos_relayer_client_expiry",
 		"Returns light client expiry in unixtime.",
 		[]string{"chain_id", "path"}, nil,
@@ -32,14 +31,14 @@ func (rc RelayerCollector) Describe(ch chan<- *prometheus.Desc) {
 func (rc RelayerCollector) Collect(ch chan<- prometheus.Metric) {
 	clients, err := relayer.GetClients(rc.Rly)
 	if err != nil {
-		log.Println(err)
+		log.Error(err.Error())
 		ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, 0)
 		return
 	}
 
 	for _, c := range clients {
 		ch <- prometheus.MustNewConstMetric(
-			client_expiry,
+			clientExpiry,
 			prometheus.GaugeValue,
 			float64(c.ExpiresAt.Unix()),
 			[]string{c.ChainID, c.Path}...,

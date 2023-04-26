@@ -1,0 +1,17 @@
+---
+project_name: relayer_exporter
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - id: "relayer_exporter"
+    main: ./cmd/relayer_exporter/relayer_exporter.go
+    binary: relayer_exporter
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64

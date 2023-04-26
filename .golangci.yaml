@@ -1,0 +1,45 @@
+---
+output:
+  sort-results: true
+
+linters:
+  enable:
+    - depguard
+    - gocritic
+    - gofumpt
+    - goimports
+    - revive
+    - misspell
+    - unconvert
+    - unused
+
+issues:
+  max-same-issues: 0
+  exclude-rules:
+    - linters:
+        - gocritic
+      text: "appendAssign"
+    - path: _test.go
+      linters:
+        - errcheck
+
+linters-settings:
+  depguard:
+    list-type: blacklist
+    include-go-root: true
+    packages-with-error-message:
+      - sync/atomic: "Use go.uber.org/atomic instead of sync/atomic"
+      - io/ioutil: "Use corresponding 'os' or 'io' functions instead."
+  errcheck:
+    exclude-functions:
+      # Don't flag lines such as "io.Copy(io.Discard, resp.Body)".
+      - io.Copy
+      # The next two are used in HTTP handlers, any error is handled by the server itself.
+      - io.WriteString
+      - (net/http.ResponseWriter).Write
+      # No need to check for errors on server's shutdown.
+      - (*net/http.Server).Shutdown
+  goimports:
+    local-prefixes: github.com/prometheus/prometheus
+  gofumpt:
+    extra-rules: true

@@ -5,11 +5,12 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"os/exec"
 	"regexp"
 	"strings"
 	"time"
+
+	log "github.com/archway-network/relayer_exporter/pkg/logger"
 )
 
 type Client struct {
@@ -76,7 +77,7 @@ func GetClients(relayerCmd string) ([]Client, error) {
 	out, err := exec.Command(relayerCmd, []string{"paths", "list"}...).Output()
 	if err != nil {
 		if err, ok := err.(*exec.ExitError); ok {
-			log.Println(string(err.Stderr))
+			log.Error(string(err.Stderr))
 		}
 		return nil, err
 	}
@@ -90,14 +91,15 @@ func GetClients(relayerCmd string) ([]Client, error) {
 		out, err := exec.Command(relayerCmd, []string{"query", "clients-expiration", p}...).Output()
 		if err != nil {
 			if err, ok := err.(*exec.ExitError); ok {
-				log.Println(string(err.Stderr))
+				log.Error(string(err.Stderr))
 			}
-			return nil, err
+			continue
 		}
 
 		c, err := parseClientsForPath(p, bytes.NewBuffer(out))
 		if err != nil {
-			return nil, err
+			log.Error(err.Error())
+			continue
 		}
 		clients = append(clients, c...)
 	}
