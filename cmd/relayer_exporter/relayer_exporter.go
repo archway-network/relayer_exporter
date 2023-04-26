@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/archway-network/relayer_exporter/collector"
+	"github.com/archway-network/relayer_exporter/pkg/collector"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

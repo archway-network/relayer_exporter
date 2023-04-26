@@ -52,9 +52,7 @@ client 07-tendermint-401 (axelar-testnet-lisbon-3) expires in 3h13m52s (14 Apr 2
 
 func TestGetClients(t *testing.T) {
 	dir, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
 	exp := []Client{
 		{ChainID: "constantine-2", Path: "archwaytestnet-cosmoshubtestnet", ExpiresAt: time.Unix(1682508960, 0).UTC()},
@@ -63,7 +61,7 @@ func TestGetClients(t *testing.T) {
 		{ChainID: "axelar-testnet-lisbon-3", Path: "archwaytestnet-axelartestnet", ExpiresAt: time.Unix(1682503740, 0).UTC()},
 	}
 
-	rlyPath := filepath.Join(dir, "..", "testdata", "rly.sh")
+	rlyPath := filepath.Join(dir, "..", "..", "testdata", "rly.sh")
 	res, err := GetClients(rlyPath)
 	assert.NoError(t, err)
 

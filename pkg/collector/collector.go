@@ -3,7 +3,7 @@ package collector
 import (
 	"log"
 
-	"github.com/archway-network/relayer_exporter/relayer"
+	"github.com/archway-network/relayer_exporter/pkg/relayer"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
