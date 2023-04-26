@@ -25,6 +25,12 @@ test-cover:
 	go tool cover -html=coverage.out
 	rm coverage.out
 
+.PHONY: test-ci
+test-ci:
+@go get ./...
+@go test ./...
+
+
 .PHONY: lint
 lint:
 	@golangci-lint run
