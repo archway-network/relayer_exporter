@@ -92,12 +92,13 @@ func GetClients(relayerCmd string) ([]Client, error) {
 			if err, ok := err.(*exec.ExitError); ok {
 				log.Println(string(err.Stderr))
 			}
-			return nil, err
+			continue
 		}
 
 		c, err := parseClientsForPath(p, bytes.NewBuffer(out))
 		if err != nil {
-			return nil, err
+			log.Println(err)
+			continue
 		}
 		clients = append(clients, c...)
 	}
