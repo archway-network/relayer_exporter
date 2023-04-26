@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
-	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParsePaths(t *testing.T) {
@@ -24,13 +25,9 @@ func TestParsePaths(t *testing.T) {
 	b.WriteString(outStr)
 
 	res, err := parsePaths(&b)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
-	if !reflect.DeepEqual(res, exp) {
-		t.Errorf("Expected %v, got %v instead.\n", exp, res)
-	}
+	assert.Equal(t, res, exp)
 }
 
 func TestParseClientsForPath(t *testing.T) {
@@ -48,13 +45,9 @@ client 07-tendermint-401 (axelar-testnet-lisbon-3) expires in 3h13m52s (14 Apr 2
 	b.WriteString(outStr)
 
 	res, err := parseClientsForPath(path, &b)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
-	if !reflect.DeepEqual(res, exp) {
-		t.Errorf("Expected %v, got %v instead.\n", exp, res)
-	}
+	assert.Equal(t, res, exp)
 }
 
 func TestGetClients(t *testing.T) {
@@ -72,11 +65,7 @@ func TestGetClients(t *testing.T) {
 
 	rlyPath := filepath.Join(dir, "..", "testdata", "rly.sh")
 	res, err := GetClients(rlyPath)
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
-	if !reflect.DeepEqual(res, exp) {
-		t.Errorf("Expected %v, got %v instead.\n", exp, res)
-	}
+	assert.Equal(t, res, exp)
 }

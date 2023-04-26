@@ -1,12 +1,14 @@
 package main
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestGetVersion(t *testing.T) {
 	exp := "version: dev commit: none date: unknown"
 	res := getVersion()
 
-	if res != exp {
-		t.Errorf("Expected %q, got %q instead.\n", exp, res)
-	}
+	assert.Equal(t, exp, res)
 }
