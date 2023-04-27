@@ -10,6 +10,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestParseChains(t *testing.T) {
+	outStr := ` 1: theta-testnet-001    -> type(cosmos) key(✔) bal(✔) path(✔)
+ 2: osmo-test-5          -> type(cosmos) key(✔) bal(✔) path(✔)
+ 3: constantine-2        -> type(cosmos) key(✔) bal(✔) path(✔)
+ 4: axelar-testnet-lisbon-3 -> type(cosmos) key(✔) bal(✔) path(✔)
+`
+	exp := []string{
+		"theta-testnet-001",
+		"osmo-test-5",
+		"constantine-2",
+		"axelar-testnet-lisbon-3",
+	}
+
+	var b bytes.Buffer
+	b.WriteString(outStr)
+
+	res, err := parseChains(&b)
+	assert.NoError(t, err)
+
+	assert.Equal(t, exp, res)
+}
+
 func TestParsePaths(t *testing.T) {
 	outStr := ` 0: archwaytestnet-axelartestnet -> chns(✔) clnts(✔) conn(✔) (constantine-2<>axelar-testnet-lisbon-3)
  1: archwaytestnet-cosmoshubtestnet -> chns(✔) clnts(✔) conn(✔) (constantine-2<>theta-testnet-001)
@@ -27,7 +49,7 @@ func TestParsePaths(t *testing.T) {
 	res, err := parsePaths(&b)
 	assert.NoError(t, err)
 
-	assert.Equal(t, res, exp)
+	assert.Equal(t, exp, res)
 }
 
 func TestParseClientsForPath(t *testing.T) {
@@ -47,7 +69,7 @@ client 07-tendermint-401 (axelar-testnet-lisbon-3) expires in 3h13m52s (14 Apr 2
 	res, err := parseClientsForPath(path, &b)
 	assert.NoError(t, err)
 
-	assert.Equal(t, res, exp)
+	assert.Equal(t, exp, res)
 }
 
 func TestGetClients(t *testing.T) {
@@ -65,5 +87,5 @@ func TestGetClients(t *testing.T) {
 	res, err := GetClients(rlyPath)
 	assert.NoError(t, err)
 
-	assert.Equal(t, res, exp)
+	assert.Equal(t, exp, res)
 }

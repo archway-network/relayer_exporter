@@ -18,6 +18,12 @@ var (
 		"Returns light client expiry in unixtime.",
 		[]string{"chain_id", "path"}, nil,
 	)
+
+	configuredChain = prometheus.NewDesc(
+		"cosmos_relayer_configured_chain",
+		"Returns configured chain.",
+		[]string{"chain_id"}, nil,
+	)
 )
 
 type RelayerCollector struct {
@@ -29,10 +35,28 @@ func (rc RelayerCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (rc RelayerCollector) Collect(ch chan<- prometheus.Metric) {
+	chains, err := relayer.GetConfiguredChains(rc.Rly)
+	if err != nil {
+		log.Error(err.Error())
+		ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, 0)
+
+		return
+	}
+
+	for _, chain := range chains {
+		ch <- prometheus.MustNewConstMetric(
+			configuredChain,
+			prometheus.GaugeValue,
+			1,
+			[]string{chain}...,
+		)
+	}
+
 	clients, err := relayer.GetClients(rc.Rly)
 	if err != nil {
 		log.Error(err.Error())
 		ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, 0)
+
 		return
 	}
 
