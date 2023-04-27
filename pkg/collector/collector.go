@@ -48,7 +48,7 @@ func (rc RelayerCollector) Collect(ch chan<- prometheus.Metric) {
 			configuredChain,
 			prometheus.GaugeValue,
 			1,
-			[]string{chain}...,
+			chain,
 		)
 	}
 
