@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/archway-network/relayer_exporter/compare/v0.1.1...v0.2.0) (2023-04-28)
+
+
+### Features
+
+* add cosmos_relayer_configured_chain metric ([#4](https://github.com/archway-network/relayer_exporter/issues/4)) ([c77af43](https://github.com/archway-network/relayer_exporter/commit/c77af4369c3b5911681dfff54e9593ef6fd94548))
+
 ## [0.1.1](https://github.com/archway-network/relayer_exporter/compare/v0.1.0...v0.1.1) (2023-04-26)
 
 
