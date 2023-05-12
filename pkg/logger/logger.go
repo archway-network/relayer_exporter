@@ -14,6 +14,7 @@ var (
 
 func init() {
 	var err error
+
 	level = zap.NewAtomicLevel()
 	config := zap.NewProductionConfig()
 

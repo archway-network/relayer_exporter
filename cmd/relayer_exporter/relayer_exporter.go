@@ -29,7 +29,6 @@ func main() {
 	logLevel := log.LevelFlag()
 
 	flag.Parse()
-
 	log.SetLevel(*logLevel)
 
 	if *version {

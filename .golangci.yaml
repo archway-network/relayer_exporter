@@ -12,6 +12,7 @@ linters:
     - misspell
     - unconvert
     - unused
+    - wsl
 
 issues:
   max-same-issues: 0

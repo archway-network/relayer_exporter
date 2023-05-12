@@ -24,6 +24,7 @@ func TestParseChains(t *testing.T) {
 	}
 
 	var b bytes.Buffer
+
 	b.WriteString(outStr)
 
 	res, err := parseChains(&b)
@@ -44,6 +45,7 @@ func TestParsePaths(t *testing.T) {
 	}
 
 	var b bytes.Buffer
+
 	b.WriteString(outStr)
 
 	res, err := parsePaths(&b)
@@ -64,6 +66,7 @@ client 07-tendermint-401 (axelar-testnet-lisbon-3) expires in 3h13m52s (14 Apr 2
 	}
 
 	var b bytes.Buffer
+
 	b.WriteString(outStr)
 
 	res, err := parseClientsForPath(path, &b)

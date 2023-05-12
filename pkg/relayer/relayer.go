@@ -29,10 +29,12 @@ func parseChains(out io.Reader) ([]string, error) {
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		r := regexp.MustCompile(`(\S+)`)
+
 		res := r.FindAllString(line, 2)
 		if len(res) < 2 {
 			return nil, fmt.Errorf("%w: %s", ErrParse, line)
 		}
+
 		chains = append(chains, res[1])
 	}
 
@@ -45,6 +47,7 @@ func parsePaths(out io.Reader) ([]string, error) {
 	scanner := bufio.NewScanner(out)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
+
 		parts := strings.Split(line, "->")
 		if len(parts) < 2 {
 			return nil, fmt.Errorf("%w: %s", ErrParse, line)
@@ -54,6 +57,7 @@ func parsePaths(out io.Reader) ([]string, error) {
 		if len(parts) < 2 {
 			return nil, fmt.Errorf("%w: %s", ErrParse, line)
 		}
+
 		paths = append(paths, strings.TrimSpace(parts[1]))
 	}
 
@@ -74,9 +78,11 @@ func parseClientsForPath(path string, out io.Reader) ([]Client, error) {
 		if len(res) != 2 {
 			return nil, err
 		}
+
 		if len(res[0]) != 2 {
 			return nil, err
 		}
+
 		if len(res[1]) != 2 {
 			return nil, err
 		}
@@ -94,11 +100,13 @@ func parseClientsForPath(path string, out io.Reader) ([]Client, error) {
 
 func GetClients(relayerCmd string) ([]Client, error) {
 	clients := []Client{}
+
 	out, err := exec.Command(relayerCmd, []string{"paths", "list"}...).Output()
 	if err != nil {
 		if err, ok := err.(*exec.ExitError); ok {
 			log.Error(string(err.Stderr))
 		}
+
 		return nil, err
 	}
 
@@ -113,6 +121,7 @@ func GetClients(relayerCmd string) ([]Client, error) {
 			if err, ok := err.(*exec.ExitError); ok {
 				log.Error(string(err.Stderr))
 			}
+
 			continue
 		}
 
@@ -121,6 +130,7 @@ func GetClients(relayerCmd string) ([]Client, error) {
 			log.Error(err.Error())
 			continue
 		}
+
 		clients = append(clients, c...)
 	}
 
