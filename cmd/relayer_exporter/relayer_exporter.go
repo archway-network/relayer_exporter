@@ -26,8 +26,11 @@ func main() {
 	port := flag.Int("p", 8008, "Server port")
 	version := flag.Bool("version", false, "Print version")
 	rly := flag.String("rly", "/home/archway/go/bin/rly", "Path to rly binary")
+	logLevel := log.LevelFlag()
 
 	flag.Parse()
+
+	log.SetLevel(*logLevel)
 
 	if *version {
 		fmt.Println(getVersion())
