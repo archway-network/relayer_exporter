@@ -4,23 +4,30 @@ import (
 	log "github.com/archway-network/relayer_exporter/pkg/logger"
 	"github.com/archway-network/relayer_exporter/pkg/relayer"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
+)
+
+const (
+	clientExpiryMetricName    = "cosmos_relayer_client_expiry"
+	configuredChainMetricName = "cosmos_relayer_configured_chain"
+	relayerUpMetricName       = "cosmos_relayer_up"
 )
 
 var (
 	up = prometheus.NewDesc(
-		"cosmos_relayer_up",
+		relayerUpMetricName,
 		"Was talking to relayer successful.",
 		nil, nil,
 	)
 
 	clientExpiry = prometheus.NewDesc(
-		"cosmos_relayer_client_expiry",
+		clientExpiryMetricName,
 		"Returns light client expiry in unixtime.",
 		[]string{"chain_id", "path"}, nil,
 	)
 
 	configuredChain = prometheus.NewDesc(
-		"cosmos_relayer_configured_chain",
+		configuredChainMetricName,
 		"Returns configured chain.",
 		[]string{"chain_id"}, nil,
 	)
@@ -35,6 +42,8 @@ func (rc RelayerCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (rc RelayerCollector) Collect(ch chan<- prometheus.Metric) {
+	log.Debug("Start collecting", zap.String("metric", configuredChainMetricName))
+
 	chains, err := relayer.GetConfiguredChains(rc.Rly)
 	if err != nil {
 		log.Error(err.Error())
@@ -52,6 +61,10 @@ func (rc RelayerCollector) Collect(ch chan<- prometheus.Metric) {
 		)
 	}
 
+	log.Debug("Stop collecting", zap.String("metric", configuredChainMetricName))
+
+	log.Debug("Start collecting", zap.String("metric", clientExpiryMetricName))
+
 	clients, err := relayer.GetClients(rc.Rly)
 	if err != nil {
 		log.Error(err.Error())
@@ -68,6 +81,8 @@ func (rc RelayerCollector) Collect(ch chan<- prometheus.Metric) {
 			[]string{c.ChainID, c.Path}...,
 		)
 	}
+
+	log.Debug("Stop collecting", zap.String("metric", clientExpiryMetricName))
 
 	ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, 1)
 }

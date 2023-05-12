@@ -12,6 +12,7 @@ import (
 	"time"
 
 	log "github.com/archway-network/relayer_exporter/pkg/logger"
+	"go.uber.org/zap"
 )
 
 type Client struct {
@@ -29,10 +30,12 @@ func parseChains(out io.Reader) ([]string, error) {
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 		r := regexp.MustCompile(`(\S+)`)
+
 		res := r.FindAllString(line, 2)
 		if len(res) < 2 {
 			return nil, fmt.Errorf("%w: %s", ErrParse, line)
 		}
+
 		chains = append(chains, res[1])
 	}
 
@@ -45,6 +48,7 @@ func parsePaths(out io.Reader) ([]string, error) {
 	scanner := bufio.NewScanner(out)
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
+
 		parts := strings.Split(line, "->")
 		if len(parts) < 2 {
 			return nil, fmt.Errorf("%w: %s", ErrParse, line)
@@ -54,6 +58,7 @@ func parsePaths(out io.Reader) ([]string, error) {
 		if len(parts) < 2 {
 			return nil, fmt.Errorf("%w: %s", ErrParse, line)
 		}
+
 		paths = append(paths, strings.TrimSpace(parts[1]))
 	}
 
@@ -74,9 +79,11 @@ func parseClientsForPath(path string, out io.Reader) ([]Client, error) {
 		if len(res) != 2 {
 			return nil, err
 		}
+
 		if len(res[0]) != 2 {
 			return nil, err
 		}
+
 		if len(res[1]) != 2 {
 			return nil, err
 		}
@@ -92,15 +99,30 @@ func parseClientsForPath(path string, out io.Reader) ([]Client, error) {
 	return clients, nil
 }
 
+func logOutput(cmd *exec.Cmd, out []byte) {
+	log.Debug("Getting stdout", zap.String("cmd", strings.Join(cmd.Args, " ")), zap.ByteString("out", out))
+}
+
+func logCmd(cmd *exec.Cmd) {
+	log.Debug("Calling command", zap.String("cmd", strings.Join(cmd.Args, " ")))
+}
+
 func GetClients(relayerCmd string) ([]Client, error) {
 	clients := []Client{}
-	out, err := exec.Command(relayerCmd, []string{"paths", "list"}...).Output()
+
+	cmd := exec.Command(relayerCmd, []string{"paths", "list"}...)
+	logCmd(cmd)
+
+	out, err := cmd.Output()
 	if err != nil {
 		if err, ok := err.(*exec.ExitError); ok {
 			log.Error(string(err.Stderr))
 		}
+
 		return nil, err
 	}
+
+	logOutput(cmd, out)
 
 	paths, err := parsePaths(bytes.NewBuffer(out))
 	if err != nil {
@@ -108,19 +130,26 @@ func GetClients(relayerCmd string) ([]Client, error) {
 	}
 
 	for _, p := range paths {
-		out, err := exec.Command(relayerCmd, []string{"query", "clients-expiration", p}...).Output()
+		cmd := exec.Command(relayerCmd, []string{"query", "clients-expiration", p}...)
+		logCmd(cmd)
+
+		out, err := cmd.Output()
 		if err != nil {
 			if err, ok := err.(*exec.ExitError); ok {
 				log.Error(string(err.Stderr))
 			}
+
 			continue
 		}
+
+		logOutput(cmd, out)
 
 		c, err := parseClientsForPath(p, bytes.NewBuffer(out))
 		if err != nil {
 			log.Error(err.Error())
 			continue
 		}
+
 		clients = append(clients, c...)
 	}
 
@@ -128,7 +157,10 @@ func GetClients(relayerCmd string) ([]Client, error) {
 }
 
 func GetConfiguredChains(relayerCmd string) ([]string, error) {
-	out, err := exec.Command(relayerCmd, []string{"chains", "list"}...).Output()
+	cmd := exec.Command(relayerCmd, []string{"chains", "list"}...)
+	logCmd(cmd)
+
+	out, err := cmd.Output()
 	if err != nil {
 		if err, ok := err.(*exec.ExitError); ok {
 			log.Error(string(err.Stderr))
@@ -136,6 +168,8 @@ func GetConfiguredChains(relayerCmd string) ([]string, error) {
 
 		return nil, err
 	}
+
+	logOutput(cmd, out)
 
 	chains, err := parseChains(bytes.NewBuffer(out))
 	if err != nil {
