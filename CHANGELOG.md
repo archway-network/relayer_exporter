@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/archway-network/relayer_exporter/compare/v0.2.0...v0.3.0) (2023-05-12)
+
+
+### Features
+
+* Add support for log levels ([#6](https://github.com/archway-network/relayer_exporter/issues/6)) ([444caba](https://github.com/archway-network/relayer_exporter/commit/444caba6f2526203ea27d543f5123a297e3175a7))
+
 ## [0.2.0](https://github.com/archway-network/relayer_exporter/compare/v0.1.1...v0.2.0) (2023-04-28)
 
 
