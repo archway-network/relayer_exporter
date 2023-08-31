@@ -51,11 +51,13 @@ func (ci ClientsInfo) PathName() string {
 	return fmt.Sprintf("%s<->%s", chainAID, chainBID)
 }
 
+type RPC struct {
+	ChainID string `yaml:"chainId"`
+	URL     string `yaml:"url"`
+}
+
 type Config struct {
-	RPCs []struct {
-		ChainID string `yaml:"chainId"`
-		URL     string `yaml:"url"`
-	} `yaml:"rpc"`
+	RPCs   []RPC `yaml:"rpc"`
 	GitHub struct {
 		Org    string `yaml:"org"`
 		Repo   string `yaml:"repo"`
