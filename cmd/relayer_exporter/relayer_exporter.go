@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/archway-network/relayer_exporter/pkg/collector"
+	"github.com/archway-network/relayer_exporter/pkg/ibc"
 	log "github.com/archway-network/relayer_exporter/pkg/logger"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -25,7 +26,7 @@ func getVersion() string {
 func main() {
 	port := flag.Int("p", 8008, "Server port")
 	version := flag.Bool("version", false, "Print version")
-	rly := flag.String("rly", "/home/archway/go/bin/rly", "Path to rly binary")
+	configPath := flag.String("config", "./config.yml", "path to config file")
 	logLevel := log.LevelFlag()
 
 	flag.Parse()
@@ -36,8 +37,24 @@ func main() {
 		os.Exit(0)
 	}
 
-	rc := collector.RelayerCollector{Rly: *rly}
-	prometheus.MustRegister(rc)
+	cfg, err := ibc.NewConfig(*configPath)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	log.Info(fmt.Sprintf("Getting IBC paths from %s/%s/%s on GitHub", cfg.GitHub.Org, cfg.GitHub.Repo, cfg.GitHub.IBCDir))
+
+	paths, err := cfg.IBCPaths()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	clientsCollector := collector.IBCClientsCollector{
+		Config: *cfg,
+		Paths:  paths,
+	}
+
+	prometheus.MustRegister(clientsCollector)
 
 	http.Handle("/metrics", promhttp.Handler())
 
