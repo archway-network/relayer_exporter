@@ -87,7 +87,7 @@ func (c *Config) GetClientsInfos(ibcs []*relayer.IBCdata) []ClientsInfo {
 			if err != nil {
 				out <- ClientsInfo{}
 
-				log.Debug(err.Error())
+				log.Error(err.Error())
 
 				return
 			}
