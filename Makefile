@@ -1,19 +1,30 @@
-BUILD_FOLDER = dist
+BUILD_FOLDER = build
+DIST_FOLDER = dist
 
 .PHONY: all
 all: install
 
 .PHONY: install
-install:
+install: go.sum
 	go install cmd/relayer_exporter/relayer_exporter.go
 
+.PHONY: go.sum
+go.sum:
+	@echo "--> Ensure dependencies have not been modified"
+	@go mod verify
+
+go-mod-cache: go.sum
+	@echo "--> Download go modules to local cache"
+	@go mod download
+
 .PHONY: build
-build:
-	@goreleaser build --single-target --config .goreleaser.yaml --snapshot --clean
+build: go.sum
+	go build -o build/relayer_exporter ./cmd/relayer_exporter/relayer_exporter.go
 
 .PHONY: clean
 clean:
 	rm -rf $(BUILD_FOLDER)
+	rm -rf $(DIST_FOLDER)
 
 .PHONY: test
 test:
@@ -29,7 +40,6 @@ test-cover:
 test-ci:
 	@go get ./...
 	@go test ./...
-
 
 .PHONY: lint
 lint:

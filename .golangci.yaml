@@ -26,11 +26,19 @@ issues:
 
 linters-settings:
   depguard:
-    list-type: blacklist
-    include-go-root: true
-    packages-with-error-message:
-      - sync/atomic: "Use go.uber.org/atomic instead of sync/atomic"
-      - io/ioutil: "Use corresponding 'os' or 'io' functions instead."
+    rules:
+      main:
+        files:
+          - $all
+        deny:
+          - pkg: "github.com/sirupsen/logrus"
+            desc: Not allowed
+          - pkg: "github.com/pkg/errors"
+            desc: Should be replaced by standard lib errors package
+          - pkg: "sync/atomic"
+            desc: Use go.uber.org/atomic instead of sync/atomic
+          - pkg: "io/ioutil"
+            desc: Use corresponding 'os' or 'io' functions instead.
   errcheck:
     exclude-functions:
       # Don't flag lines such as "io.Copy(io.Discard, resp.Body)".
