@@ -20,6 +20,9 @@ builds:
       - -mod=readonly
       - -trimpath
     ldflags:
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .Commit }}
+      - -X main.date={{ .CommitDate }}
       - -s -w
       - -linkmode=external
       - -extldflags '-Wl,-z,muldefs --static -lm'
@@ -41,6 +44,9 @@ builds:
       - -mod=readonly
       - -trimpath
     ldflags:
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .Commit }}
+      - -X main.date={{ .CommitDate }}
       - -s -w
       - -linkmode=external
       - -extldflags '-Wl,-z,muldefs --static -lm'
@@ -62,6 +68,9 @@ builds:
       - -mod=readonly
       - -trimpath
     ldflags:
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .Commit }}
+      - -X main.date={{ .CommitDate }}
       - -w -s
       - -linkmode=external
     tags:
@@ -81,6 +90,9 @@ builds:
       - -mod=readonly
       - -trimpath
     ldflags:
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .Commit }}
+      - -X main.date={{ .CommitDate }}
       - -w -s
       - -linkmode=external
     tags:
