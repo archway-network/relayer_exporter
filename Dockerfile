@@ -1,8 +1,6 @@
-FROM scratch
+FROM gcr.io/distroless/static-debian12:nonroot
 
 COPY relayer_exporter /usr/bin/relayer_exporter
-
-USER 1000:1000
 
 # metrics server
 EXPOSE 8008
