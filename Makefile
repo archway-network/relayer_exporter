@@ -1,5 +1,8 @@
 BUILD_FOLDER = build
 DIST_FOLDER = dist
+GORELEASER_VERSION = v1.21.0
+DOCKER := $(shell which docker)
+PACKAGE_NAME = github.com/archway-network/relayer_exporter
 
 .PHONY: all
 all: install
@@ -52,3 +55,24 @@ update:
 	@go mod tidy
 	@go build -o "$(TMPDIR)/relayer_exporter" cmd/relayer_exporter/relayer_exporter.go
 	@git diff -- go.mod go.sum
+
+release-dryrun:
+	$(DOCKER) run \
+		--rm \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v `pwd`:/go/src/$(PACKAGE_NAME) \
+		-w /go/src/$(PACKAGE_NAME) \
+		goreleaser/goreleaser-cross:$(GORELEASER_VERSION) \
+		--skip-publish \
+		--clean \
+		--skip-validate
+
+release:
+	$(DOCKER) run \
+		--rm \
+		-e GITHUB_TOKEN="$(GITHUB_TOKEN)" \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v `pwd`:/go/src/$(PACKAGE_NAME) \
+		-w /go/src/$(PACKAGE_NAME) \
+		goreleaser/goreleaser-cross:$(GORELEASER_VERSION) \
+		--clean
