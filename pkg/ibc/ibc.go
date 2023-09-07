@@ -31,20 +31,6 @@ type ClientsInfo struct {
 	ChainBClientExpiration time.Time
 }
 
-func (ci ClientsInfo) PathName() string {
-	chainAID := ""
-	if ci.ChainA != nil {
-		chainAID = ci.ChainA.ChainID()
-	}
-
-	chainBID := ""
-	if ci.ChainB != nil {
-		chainBID = ci.ChainB.ChainID()
-	}
-
-	return fmt.Sprintf("%s<->%s", chainAID, chainBID)
-}
-
 func GetClientsInfos(ibcs []*relayer.IBCdata, rpcs map[string]string) []ClientsInfo {
 	num := len(ibcs)
 

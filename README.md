@@ -25,6 +25,6 @@ Using provided RPC endpoints it gets clients expiration dates for fetched paths.
 ```
 # HELP cosmos_ibc_client_expiry Returns light client expiry in unixtime.
 # TYPE cosmos_ibc_client_expiry gauge
-cosmos_ibc_client_expiry{chain_id="agoric-3",client_id="07-tendermint-75",path="archway-1<->agoric-3"} 1.694678473e+09
-cosmos_ibc_client_expiry{chain_id="archway-1",client_id="07-tendermint-23",path="archway-1<->agoric-3"} 1.694678593e+09
+cosmos_ibc_client_expiry{client_id="07-tendermint-23",host_chain_id="archway-1",target_chain_id="agoric-3"} 1.695283384e+09
+cosmos_ibc_client_expiry{client_id="07-tendermint-75",host_chain_id="agoric-3",target_chain_id="archway-1"} 1.69528327e+09
 ```

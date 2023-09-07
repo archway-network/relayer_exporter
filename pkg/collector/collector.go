@@ -17,7 +17,7 @@ const (
 var clientExpiry = prometheus.NewDesc(
 	clientExpiryMetricName,
 	"Returns light client expiry in unixtime.",
-	[]string{"chain_id", "client_id", "path"}, nil,
+	[]string{"host_chain_id", "client_id", "target_chain_id"}, nil,
 )
 
 type IBCClientsCollector struct {
@@ -33,20 +33,18 @@ func (cc IBCClientsCollector) Collect(ch chan<- prometheus.Metric) {
 	clients := ibc.GetClientsInfos(cc.Paths, cc.RPCs)
 
 	for _, c := range clients {
-		path := c.PathName()
-
 		ch <- prometheus.MustNewConstMetric(
 			clientExpiry,
 			prometheus.GaugeValue,
 			float64(c.ChainAClientExpiration.Unix()),
-			[]string{c.ChainA.ChainID(), c.ChainA.ClientID(), path}...,
+			[]string{c.ChainA.ChainID(), c.ChainA.ClientID(), c.ChainB.ChainID()}...,
 		)
 
 		ch <- prometheus.MustNewConstMetric(
 			clientExpiry,
 			prometheus.GaugeValue,
 			float64(c.ChainBClientExpiration.Unix()),
-			[]string{c.ChainB.ChainID(), c.ChainB.ClientID(), path}...,
+			[]string{c.ChainB.ChainID(), c.ChainB.ClientID(), c.ChainA.ChainID()}...,
 		)
 	}
 
