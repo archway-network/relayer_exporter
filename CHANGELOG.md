@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/archway-network/relayer_exporter/compare/v0.3.0...v0.4.0) (2023-09-07)
+
+
+### Features
+
+* Gather clients expiry metrics for paths on github ([#8](https://github.com/archway-network/relayer_exporter/issues/8)) ([91fc418](https://github.com/archway-network/relayer_exporter/commit/91fc418769041b6865677f049e48f021738e0329))
+
 ## [0.3.0](https://github.com/archway-network/relayer_exporter/compare/v0.2.0...v0.3.0) (2023-05-12)
 
 
