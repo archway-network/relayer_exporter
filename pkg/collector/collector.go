@@ -1,88 +1,52 @@
 package collector
 
 import (
+	"github.com/archway-network/relayer_exporter/pkg/ibc"
 	log "github.com/archway-network/relayer_exporter/pkg/logger"
-	"github.com/archway-network/relayer_exporter/pkg/relayer"
+	"github.com/cosmos/relayer/v2/relayer"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 )
 
 const (
-	clientExpiryMetricName    = "cosmos_relayer_client_expiry"
+	clientExpiryMetricName    = "cosmos_ibc_client_expiry"
 	configuredChainMetricName = "cosmos_relayer_configured_chain"
 	relayerUpMetricName       = "cosmos_relayer_up"
 )
 
-var (
-	up = prometheus.NewDesc(
-		relayerUpMetricName,
-		"Was talking to relayer successful.",
-		nil, nil,
-	)
-
-	clientExpiry = prometheus.NewDesc(
-		clientExpiryMetricName,
-		"Returns light client expiry in unixtime.",
-		[]string{"chain_id", "path"}, nil,
-	)
-
-	configuredChain = prometheus.NewDesc(
-		configuredChainMetricName,
-		"Returns configured chain.",
-		[]string{"chain_id"}, nil,
-	)
+var clientExpiry = prometheus.NewDesc(
+	clientExpiryMetricName,
+	"Returns light client expiry in unixtime.",
+	[]string{"host_chain_id", "client_id", "target_chain_id"}, nil,
 )
 
-type RelayerCollector struct {
-	Rly string
+type IBCClientsCollector struct {
+	RPCs  map[string]string
+	Paths []*relayer.IBCdata
 }
 
-func (rc RelayerCollector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- up
-}
+func (cc IBCClientsCollector) Describe(_ chan<- *prometheus.Desc) {}
 
-func (rc RelayerCollector) Collect(ch chan<- prometheus.Metric) {
-	log.Debug("Start collecting", zap.String("metric", configuredChainMetricName))
-
-	chains, err := relayer.GetConfiguredChains(rc.Rly)
-	if err != nil {
-		log.Error(err.Error())
-		ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, 0)
-
-		return
-	}
-
-	for _, chain := range chains {
-		ch <- prometheus.MustNewConstMetric(
-			configuredChain,
-			prometheus.GaugeValue,
-			1,
-			chain,
-		)
-	}
-
-	log.Debug("Stop collecting", zap.String("metric", configuredChainMetricName))
-
+func (cc IBCClientsCollector) Collect(ch chan<- prometheus.Metric) {
 	log.Debug("Start collecting", zap.String("metric", clientExpiryMetricName))
 
-	clients, err := relayer.GetClients(rc.Rly)
-	if err != nil {
-		log.Error(err.Error())
-		ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, 0)
-
-		return
-	}
+	clients := ibc.GetClientsInfos(cc.Paths, cc.RPCs)
 
 	for _, c := range clients {
 		ch <- prometheus.MustNewConstMetric(
 			clientExpiry,
 			prometheus.GaugeValue,
-			float64(c.ExpiresAt.Unix()),
-			[]string{c.ChainID, c.Path}...,
+			float64(c.ChainAClientExpiration.Unix()),
+			[]string{c.ChainA.ChainID(), c.ChainA.ClientID(), c.ChainB.ChainID()}...,
+		)
+
+		ch <- prometheus.MustNewConstMetric(
+			clientExpiry,
+			prometheus.GaugeValue,
+			float64(c.ChainBClientExpiration.Unix()),
+			[]string{c.ChainB.ChainID(), c.ChainB.ClientID(), c.ChainA.ChainID()}...,
 		)
 	}
 
 	log.Debug("Stop collecting", zap.String("metric", clientExpiryMetricName))
-
-	ch <- prometheus.MustNewConstMetric(up, prometheus.GaugeValue, 1)
 }

@@ -1,18 +1,30 @@
 # relayer_exporter
-Prometheus exporter for go relayer.
-Returns metrics which are missing in [gorelayer](https://github.com/cosmos/relayer)
+Prometheus exporter for ibc clients.
+Returns metrics about clients expiration date.
+
+## Configuration
+Exporter needs config file in yaml format like following
+
+```yaml
+rpc:
+  - chainId: archway-1
+    url: https://rpc.mainnet.archway.io:443
+  - chainId: agoric-3
+    url: https://main.rpc.agoric.net:443
+
+github:
+  org: archway-network
+  repo: networks
+  dir: _IBC
+```
+
+During startup it fetches IBC paths from github based on provided config.
+Using provided RPC endpoints it gets clients expiration dates for fetched paths.
 
 ## Metrics
 ```
-# HELP cosmos_relayer_client_expiry Returns light client expiry in unixtime.
-# TYPE cosmos_relayer_client_expiry gauge
-cosmos_relayer_client_expiry{chain_id="checkersa",path="demo"} 1.68412974e+09
-cosmos_relayer_client_expiry{chain_id="checkersb",path="demo"} 1.68412974e+09
-# HELP cosmos_relayer_configured_chain Returns configured chain.
-# TYPE cosmos_relayer_configured_chain gauge
-cosmos_relayer_configured_chain{chain_id="checkersa"} 1
-cosmos_relayer_configured_chain{chain_id="checkersb"} 1
-# HELP cosmos_relayer_up Was talking to relayer successful.
-# TYPE cosmos_relayer_up gauge
-cosmos_relayer_up 1
+# HELP cosmos_ibc_client_expiry Returns light client expiry in unixtime.
+# TYPE cosmos_ibc_client_expiry gauge
+cosmos_ibc_client_expiry{client_id="07-tendermint-23",host_chain_id="archway-1",target_chain_id="agoric-3"} 1.695283384e+09
+cosmos_ibc_client_expiry{client_id="07-tendermint-75",host_chain_id="agoric-3",target_chain_id="archway-1"} 1.69528327e+09
 ```

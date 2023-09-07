@@ -1,0 +1,35 @@
+---
+rpc:
+  - chainId: archway-1
+    url: https://rpc.mainnet.archway.io:443
+  - chainId: agoric-3
+    url: https://main.rpc.agoric.net:443
+  - chainId: axelar-dojo-1
+    url: https://rpc-1.axelar.nodes.guru:443
+  - chainId: axelar-testnet-lisbon-3
+    url: https://rpc-axelar-testnet.imperator.co:443
+  - chainId: constantine-3
+    url: https://rpc.constantine.archway.tech:443
+  - chainId: cosmoshub-4
+    url: https://cosmoshub-rpc.stakely.io:443
+  - chainId: jackal-1
+    url: https://jackal-rpc.polkachu.com:443
+  - chainId: juno-1
+    url: https://juno-rpc.polkachu.com:443
+  - chainId: kaiyo-1
+    url: https://kujira-rpc.polkachu.com:443
+  - chainId: nois-1
+    url: https://nois-rpc.polkachu.com:443
+  - chainId: osmo-test-5
+    url: https://rpc.osmotest5.osmosis.zone:443
+  - chainId: osmosis-1
+    url: https://osmosis-rpc.stakely.io:443
+  - chainId: theta-testnet-001
+    url: https://rpc.sentry-01.theta-testnet.polypore.xyz:443
+  - chainId: umee-1
+    url: https://rpc-umee.mzonder.com:443
+
+github:
+  org: archway-network
+  repo: networks
+  dir: _IBC
