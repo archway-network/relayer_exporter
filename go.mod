@@ -3,9 +3,10 @@ module github.com/archway-network/relayer_exporter
 go 1.21
 
 require (
+	github.com/caarlos0/env/v9 v9.0.0
 	github.com/cosmos/relayer/v2 v2.4.1
 	github.com/google/go-cmp v0.5.9
-	github.com/google/go-github/v54 v54.0.0
+	github.com/google/go-github/v55 v55.0.0
 	github.com/prometheus/client_golang v1.15.0
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/zap v1.24.0

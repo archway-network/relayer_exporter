@@ -6,9 +6,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/caarlos0/env/v9"
 	"github.com/cosmos/relayer/v2/relayer"
-	"github.com/google/go-github/v54/github"
+	"github.com/google/go-github/v55/github"
 	"gopkg.in/yaml.v3"
+
+	log "github.com/archway-network/relayer_exporter/pkg/logger"
 )
 
 const ibcPathSuffix = ".json"
@@ -24,6 +27,7 @@ type Config struct {
 		Org    string `yaml:"org"`
 		Repo   string `yaml:"repo"`
 		IBCDir string `yaml:"dir"`
+		Token  string `env:"GITHUB_TOKEN"`
 	} `yaml:"github"`
 }
 
@@ -41,6 +45,12 @@ func (c *Config) IBCPaths() ([]*relayer.IBCdata, error) {
 	ctx := context.Background()
 
 	client := github.NewClient(nil)
+
+	if c.GitHub.Token != "" {
+		log.Debug("Using provided GITHUB_TOKEN env var for GitHub client")
+
+		client = github.NewClient(nil).WithAuthToken(c.GitHub.Token)
+	}
 
 	_, ibcDir, _, err := client.Repositories.GetContents(ctx, c.GitHub.Org, c.GitHub.Repo, c.GitHub.IBCDir, nil)
 	if err != nil {
@@ -84,7 +94,11 @@ func NewConfig(configPath string) (*Config, error) {
 	defer file.Close()
 
 	d := yaml.NewDecoder(file)
-	if err := d.Decode(&config); err != nil {
+	if err := d.Decode(config); err != nil {
+		return nil, err
+	}
+
+	if err := env.Parse(config); err != nil {
 		return nil, err
 	}
 

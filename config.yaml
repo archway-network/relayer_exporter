@@ -5,7 +5,7 @@ rpc:
   - chainId: agoric-3
     url: https://main.rpc.agoric.net:443
   - chainId: axelar-dojo-1
-    url: https://rpc-1.axelar.nodes.guru:443
+    url: https://axelar-rpc.polkachu.com:443
   - chainId: axelar-testnet-lisbon-3
     url: https://rpc-axelar-testnet.imperator.co:443
   - chainId: constantine-3
