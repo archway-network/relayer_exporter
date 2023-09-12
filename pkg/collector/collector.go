@@ -74,7 +74,7 @@ func (wb WalletBalanceCollector) Describe(ch chan<- *prometheus.Desc) {
 func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
 	log.Debug("Start collecting", zap.String("metric", walletBalanceMetricName))
 
-	accounts := account.GetAccountsBalances(wb.Accounts, wb.RPCs)
+	accounts := account.GetBalances(wb.Accounts, wb.RPCs)
 
 	for _, a := range accounts {
 		// Convert to a big float to get a float64 for metrics

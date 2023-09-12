@@ -17,7 +17,7 @@ type Account struct {
 	Balance math.Int
 }
 
-func GetAccountsBalances(accounts []Account, rpcs map[string]string) []Account {
+func GetBalances(accounts []Account, rpcs map[string]string) []Account {
 	num := len(accounts)
 
 	out := make(chan Account, num)
@@ -25,7 +25,7 @@ func GetAccountsBalances(accounts []Account, rpcs map[string]string) []Account {
 
 	for i := 0; i < num; i++ {
 		go func(i int) {
-			account, err := GetAccountBalance(accounts[i], rpcs)
+			account, err := GetBalance(accounts[i], rpcs)
 			if err != nil {
 				out <- Account{}
 
@@ -49,7 +49,7 @@ func GetAccountsBalances(accounts []Account, rpcs map[string]string) []Account {
 	return accountsWithBalance
 }
 
-func GetAccountBalance(account Account, rpcs map[string]string) (Account, error) {
+func GetBalance(account Account, rpcs map[string]string) (Account, error) {
 	chain, err := chain.PrepChain(chain.Info{
 		ChainID: account.ChainID,
 		RPCAddr: rpcs[account.ChainID],
