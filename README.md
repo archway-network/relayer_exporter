@@ -19,6 +19,7 @@ github:
 ```
 
 During startup it fetches IBC paths from github based on provided config.
+If env var GITHUB_TOKEN is provided it will be used to make authenticated requests to GitHub API.
 Using provided RPC endpoints it gets clients expiration dates for fetched paths.
 
 ## Metrics
