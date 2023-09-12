@@ -18,16 +18,16 @@ type Info struct {
 	ClientID string
 }
 
-func PrepChain(cd Info) (*relayer.Chain, error) {
+func PrepChain(info Info) (*relayer.Chain, error) {
 	chain := relayer.Chain{}
 	providerConfig := cosmos.CosmosProviderConfig{
-		ChainID:        cd.ChainID,
+		ChainID:        info.ChainID,
 		Timeout:        rpcTimeout,
 		KeyringBackend: keyringBackend,
-		RPCAddr:        cd.RPCAddr,
+		RPCAddr:        info.RPCAddr,
 	}
 
-	provider, err := providerConfig.NewProvider(nil, "", false, cd.ChainID)
+	provider, err := providerConfig.NewProvider(nil, "", false, info.ChainID)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func PrepChain(cd Info) (*relayer.Chain, error) {
 
 	chain.ChainProvider = provider
 
-	err = chain.SetPath(&relayer.PathEnd{ClientID: cd.ClientID})
+	err = chain.SetPath(&relayer.PathEnd{ClientID: info.ClientID})
 	if err != nil {
 		return nil, err
 	}

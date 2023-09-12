@@ -24,7 +24,7 @@ var (
 	)
 	walletBalance = prometheus.NewDesc(
 		walletBalanceMetricName,
-		"Returns wallet balance for an address on a chain",
+		"Returns wallet balance for an address on a chain.",
 		[]string{"account", "chain_id", "denom"}, nil,
 	)
 )
