@@ -1,6 +1,9 @@
 package collector
 
 import (
+	"math/big"
+
+	"github.com/archway-network/relayer_exporter/pkg/account"
 	"github.com/archway-network/relayer_exporter/pkg/ibc"
 	log "github.com/archway-network/relayer_exporter/pkg/logger"
 	"github.com/cosmos/relayer/v2/relayer"
@@ -9,15 +12,21 @@ import (
 )
 
 const (
-	clientExpiryMetricName    = "cosmos_ibc_client_expiry"
-	configuredChainMetricName = "cosmos_relayer_configured_chain"
-	relayerUpMetricName       = "cosmos_relayer_up"
+	clientExpiryMetricName  = "cosmos_ibc_client_expiry"
+	walletBalanceMetricName = "cosmos_wallet_balance"
 )
 
-var clientExpiry = prometheus.NewDesc(
-	clientExpiryMetricName,
-	"Returns light client expiry in unixtime.",
-	[]string{"host_chain_id", "client_id", "target_chain_id"}, nil,
+var (
+	clientExpiry = prometheus.NewDesc(
+		clientExpiryMetricName,
+		"Returns light client expiry in unixtime.",
+		[]string{"host_chain_id", "client_id", "target_chain_id"}, nil,
+	)
+	walletBalance = prometheus.NewDesc(
+		walletBalanceMetricName,
+		"Returns wallet balance for an address on a chain",
+		[]string{"account", "chain_id", "denom"}, nil,
+	)
 )
 
 type IBCClientsCollector struct {
@@ -25,7 +34,14 @@ type IBCClientsCollector struct {
 	Paths []*relayer.IBCdata
 }
 
-func (cc IBCClientsCollector) Describe(_ chan<- *prometheus.Desc) {}
+type WalletBalanceCollector struct {
+	RPCs     map[string]string
+	Accounts []account.Account
+}
+
+func (cc IBCClientsCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- clientExpiry
+}
 
 func (cc IBCClientsCollector) Collect(ch chan<- prometheus.Metric) {
 	log.Debug("Start collecting", zap.String("metric", clientExpiryMetricName))
@@ -49,4 +65,27 @@ func (cc IBCClientsCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	log.Debug("Stop collecting", zap.String("metric", clientExpiryMetricName))
+}
+
+func (wb WalletBalanceCollector) Describe(ch chan<- *prometheus.Desc) {
+	ch <- walletBalance
+}
+
+func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
+	log.Debug("Start collecting", zap.String("metric", walletBalanceMetricName))
+
+	accounts := account.GetAccountsBalances(wb.Accounts, wb.RPCs)
+
+	for _, a := range accounts {
+		// Convert to a big float to get a float64 for metrics
+		balance, _ := big.NewFloat(0.0).SetInt(a.Balance.BigInt()).Float64()
+		ch <- prometheus.MustNewConstMetric(
+			walletBalance,
+			prometheus.GaugeValue,
+			balance,
+			[]string{a.Address, a.ChainID, a.Denom}...,
+		)
+	}
+
+	log.Debug("Stop collecting", zap.String("metric", walletBalanceMetricName))
 }
