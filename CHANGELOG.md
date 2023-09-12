@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/archway-network/relayer_exporter/compare/v0.4.0...v0.5.0) (2023-09-12)
+
+
+### Features
+
+* Add authentication support for github client ([#10](https://github.com/archway-network/relayer_exporter/issues/10)) ([825fea4](https://github.com/archway-network/relayer_exporter/commit/825fea4ceb1654b02228f7403724d8db46e9a1a1))
+
 ## [0.4.0](https://github.com/archway-network/relayer_exporter/compare/v0.3.0...v0.4.0) (2023-09-07)
 
 
