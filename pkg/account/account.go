@@ -25,7 +25,7 @@ func GetBalances(accounts []Account, rpcs map[string]string) []Account {
 
 	for i := 0; i < num; i++ {
 		go func(i int) {
-			account, err := GetBalance(accounts[i], rpcs)
+			err := accounts[i].GetBalance(rpcs)
 			if err != nil {
 				out <- Account{}
 
@@ -33,7 +33,7 @@ func GetBalances(accounts []Account, rpcs map[string]string) []Account {
 
 				return
 			}
-			out <- account
+			out <- accounts[i]
 		}(i)
 	}
 
@@ -49,23 +49,23 @@ func GetBalances(accounts []Account, rpcs map[string]string) []Account {
 	return accountsWithBalance
 }
 
-func GetBalance(account Account, rpcs map[string]string) (Account, error) {
+func (a *Account) GetBalance(rpcs map[string]string) error {
 	chain, err := chain.PrepChain(chain.Info{
-		ChainID: account.ChainID,
-		RPCAddr: rpcs[account.ChainID],
+		ChainID: a.ChainID,
+		RPCAddr: rpcs[a.ChainID],
 	})
 	if err != nil {
-		return Account{}, err
+		return err
 	}
 
 	ctx := context.Background()
 
-	coins, err := chain.ChainProvider.QueryBalanceWithAddress(ctx, account.Address)
+	coins, err := chain.ChainProvider.QueryBalanceWithAddress(ctx, a.Address)
 	if err != nil {
-		return Account{}, err
+		return err
 	}
 
-	account.Balance = coins.AmountOf(account.Denom)
+	a.Balance = coins.AmountOf(a.Denom)
 
-	return account, nil
+	return nil
 }
