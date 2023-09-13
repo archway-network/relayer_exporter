@@ -23,7 +23,7 @@ type RPC struct {
 }
 
 type Config struct {
-	Accounts []account.Account `yaml:"account"`
+	Accounts []account.Account `yaml:"accounts"`
 	RPCs     []RPC             `yaml:"rpc"`
 	GitHub   struct {
 		Org    string `yaml:"org"`
