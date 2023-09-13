@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/archway-network/relayer_exporter/compare/v0.5.0...v0.6.0) (2023-09-13)
+
+
+### Features
+
+* Add cosmos_wallet_balance metric ([#12](https://github.com/archway-network/relayer_exporter/issues/12)) ([436982c](https://github.com/archway-network/relayer_exporter/commit/436982c5f83a97f73c3e4b6700f97bee68e5c2d6))
+
 ## [0.5.0](https://github.com/archway-network/relayer_exporter/compare/v0.4.0...v0.5.0) (2023-09-12)
 
 
