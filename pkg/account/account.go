@@ -4,10 +4,13 @@ import (
 	"context"
 
 	"cosmossdk.io/math"
-	"go.uber.org/zap"
 
 	"github.com/archway-network/relayer_exporter/pkg/chain"
-	log "github.com/archway-network/relayer_exporter/pkg/logger"
+)
+
+const (
+	successStatus = "success"
+	errorStatus   = "error"
 )
 
 type Account struct {
@@ -15,38 +18,7 @@ type Account struct {
 	Denom   string `yaml:"denom"`
 	ChainID string `yaml:"chainId"`
 	Balance math.Int
-}
-
-func GetBalances(accounts []Account, rpcs map[string]string) []Account {
-	num := len(accounts)
-
-	out := make(chan Account, num)
-	defer close(out)
-
-	for i := 0; i < num; i++ {
-		go func(i int) {
-			err := accounts[i].GetBalance(rpcs)
-			if err != nil {
-				out <- Account{}
-
-				log.Error(err.Error(), zap.Any("account", accounts[i]))
-
-				return
-			}
-			out <- accounts[i]
-		}(i)
-	}
-
-	accountsWithBalance := []Account{}
-
-	for i := 0; i < num; i++ {
-		account := <-out
-		if account.Address != "" {
-			accountsWithBalance = append(accountsWithBalance, account)
-		}
-	}
-
-	return accountsWithBalance
+	Status  string
 }
 
 func (a *Account) GetBalance(rpcs map[string]string) error {
@@ -62,10 +34,13 @@ func (a *Account) GetBalance(rpcs map[string]string) error {
 
 	coins, err := chain.ChainProvider.QueryBalanceWithAddress(ctx, a.Address)
 	if err != nil {
+		a.Status = errorStatus
+
 		return err
 	}
 
 	a.Balance = coins.AmountOf(a.Denom)
+	a.Status = successStatus
 
 	return nil
 }

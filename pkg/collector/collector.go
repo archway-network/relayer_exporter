@@ -2,6 +2,7 @@ package collector
 
 import (
 	"math/big"
+	"sync"
 
 	"github.com/archway-network/relayer_exporter/pkg/account"
 	"github.com/archway-network/relayer_exporter/pkg/ibc"
@@ -25,7 +26,7 @@ var (
 	walletBalance = prometheus.NewDesc(
 		walletBalanceMetricName,
 		"Returns wallet balance for an address on a chain.",
-		[]string{"account", "chain_id", "denom"}, nil,
+		[]string{"account", "chain_id", "denom", "status"}, nil,
 	)
 )
 
@@ -74,18 +75,34 @@ func (wb WalletBalanceCollector) Describe(ch chan<- *prometheus.Desc) {
 func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
 	log.Debug("Start collecting", zap.String("metric", walletBalanceMetricName))
 
-	accounts := account.GetBalances(wb.Accounts, wb.RPCs)
+	var wg sync.WaitGroup
 
-	for _, a := range accounts {
-		// Convert to a big float to get a float64 for metrics
-		balance, _ := big.NewFloat(0.0).SetInt(a.Balance.BigInt()).Float64()
-		ch <- prometheus.MustNewConstMetric(
-			walletBalance,
-			prometheus.GaugeValue,
-			balance,
-			[]string{a.Address, a.ChainID, a.Denom}...,
-		)
+	for _, a := range wb.Accounts {
+		wg.Add(1)
+
+		go func(account account.Account) {
+			defer wg.Done()
+
+			balance := 0.0
+
+			err := account.GetBalance(wb.RPCs)
+			if err != nil {
+				log.Error(err.Error(), zap.Any("account", account))
+			} else {
+				// Convert to a big float to get a float64 for metrics
+				balance, _ = big.NewFloat(0.0).SetInt(account.Balance.BigInt()).Float64()
+			}
+
+			ch <- prometheus.MustNewConstMetric(
+				walletBalance,
+				prometheus.GaugeValue,
+				balance,
+				[]string{account.Address, account.ChainID, account.Denom, account.Status}...,
+			)
+		}(a)
 	}
+
+	wg.Wait()
 
 	log.Debug("Stop collecting", zap.String("metric", walletBalanceMetricName))
 }

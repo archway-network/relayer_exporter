@@ -38,5 +38,5 @@ cosmos_ibc_client_expiry{client_id="07-tendermint-23",host_chain_id="archway-1",
 cosmos_ibc_client_expiry{client_id="07-tendermint-75",host_chain_id="agoric-3",target_chain_id="archway-1"} 1.69528327e+09
 # HELP cosmos_wallet_balance Returns wallet balance for an address on a chain
 # TYPE cosmos_wallet_balance gauge
-cosmos_wallet_balance{account="archway1l2al7y78500h5akvgt8exwnkpmf2zmk8ky9ht3",chain_id="constantine-3",denom="aconst"} 4.64e+18
+cosmos_wallet_balance{account="archway1l2al7y78500h5akvgt8exwnkpmf2zmk8ky9ht3",chain_id="constantine-3",denom="aconst",status="success"} 4.64e+18
 ```
