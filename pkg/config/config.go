@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-github/v55/github"
 	"gopkg.in/yaml.v3"
 
+	"github.com/archway-network/relayer_exporter/pkg/account"
 	log "github.com/archway-network/relayer_exporter/pkg/logger"
 )
 
@@ -22,8 +23,9 @@ type RPC struct {
 }
 
 type Config struct {
-	RPCs   []RPC `yaml:"rpc"`
-	GitHub struct {
+	Accounts []account.Account `yaml:"accounts"`
+	RPCs     []RPC             `yaml:"rpc"`
+	GitHub   struct {
 		Org    string `yaml:"org"`
 		Repo   string `yaml:"repo"`
 		IBCDir string `yaml:"dir"`

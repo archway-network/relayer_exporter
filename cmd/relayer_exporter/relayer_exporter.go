@@ -57,7 +57,13 @@ func main() {
 		Paths: paths,
 	}
 
+	balancesCollector := collector.WalletBalanceCollector{
+		RPCs:     rpcs,
+		Accounts: cfg.Accounts,
+	}
+
 	prometheus.MustRegister(clientsCollector)
+	prometheus.MustRegister(balancesCollector)
 
 	http.Handle("/metrics", promhttp.Handler())
 

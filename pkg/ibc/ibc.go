@@ -5,22 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/archway-network/relayer_exporter/pkg/chain"
 	log "github.com/archway-network/relayer_exporter/pkg/logger"
 	"github.com/cosmos/relayer/v2/relayer"
-	"github.com/cosmos/relayer/v2/relayer/chains/cosmos"
 	"github.com/google/go-cmp/cmp"
 )
-
-const (
-	rpcTimeout     = "10s"
-	keyringBackend = "test"
-)
-
-type ChainData struct {
-	ChainID  string
-	RPCAddr  string
-	ClientID string
-}
 
 type ClientsInfo struct {
 	ChainA                 *relayer.Chain
@@ -66,26 +55,26 @@ func GetClientsInfos(ibcs []*relayer.IBCdata, rpcs map[string]string) []ClientsI
 func GetClientsInfo(ibc *relayer.IBCdata, rpcs map[string]string) (ClientsInfo, error) {
 	clientsInfo := ClientsInfo{}
 
-	cdA := ChainData{
+	cdA := chain.Info{
 		ChainID:  ibc.Chain1.ChainName,
 		RPCAddr:  rpcs[ibc.Chain1.ChainName],
 		ClientID: ibc.Chain1.ClientID,
 	}
 
-	chainA, err := prepChain(cdA)
+	chainA, err := chain.PrepChain(cdA)
 	if err != nil {
 		return ClientsInfo{}, fmt.Errorf("Error: %w for %v", err, cdA)
 	}
 
 	clientsInfo.ChainA = chainA
 
-	cdB := ChainData{
+	cdB := chain.Info{
 		ChainID:  ibc.Chain2.ChainName,
 		RPCAddr:  rpcs[ibc.Chain2.ChainName],
 		ClientID: ibc.Chain2.ClientID,
 	}
 
-	chainB, err := prepChain(cdB)
+	chainB, err := chain.PrepChain(cdB)
 	if err != nil {
 		return ClientsInfo{}, fmt.Errorf("Error: %w for %v", err, cdB)
 	}
@@ -105,33 +94,4 @@ func GetClientsInfo(ibc *relayer.IBCdata, rpcs map[string]string) (ClientsInfo, 
 	}
 
 	return clientsInfo, nil
-}
-
-func prepChain(cd ChainData) (*relayer.Chain, error) {
-	chain := relayer.Chain{}
-	providerConfig := cosmos.CosmosProviderConfig{
-		ChainID:        cd.ChainID,
-		Timeout:        rpcTimeout,
-		KeyringBackend: keyringBackend,
-		RPCAddr:        cd.RPCAddr,
-	}
-
-	provider, err := providerConfig.NewProvider(nil, "", false, cd.ChainID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = provider.Init(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	chain.ChainProvider = provider
-
-	err = chain.SetPath(&relayer.PathEnd{ClientID: cd.ClientID})
-	if err != nil {
-		return nil, err
-	}
-
-	return &chain, nil
 }
