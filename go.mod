@@ -6,7 +6,6 @@ require (
 	cosmossdk.io/math v1.0.1
 	github.com/caarlos0/env/v9 v9.0.0
 	github.com/cosmos/relayer/v2 v2.4.1
-	github.com/google/go-cmp v0.5.9
 	github.com/google/go-github/v55 v55.0.0
 	github.com/prometheus/client_golang v1.15.0
 	github.com/stretchr/testify v1.8.4
@@ -87,6 +86,7 @@ require (
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/orderedcode v0.0.1 // indirect
 	github.com/google/s2a-go v0.1.4 // indirect

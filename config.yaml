@@ -18,12 +18,16 @@ rpc:
     url: https://juno-rpc.polkachu.com:443
   - chainId: kaiyo-1
     url: https://kujira-rpc.polkachu.com:443
+  - chainId: noble-1
+    url: https://noble-rpc.polkachu.com:443
   - chainId: nois-1
     url: https://nois-rpc.polkachu.com:443
   - chainId: osmo-test-5
     url: https://rpc.osmotest5.osmosis.zone:443
   - chainId: osmosis-1
     url: https://osmosis-rpc.stakely.io:443
+  - chainId: sandbox-01
+    url: https://rpc.sandbox-01.aksh.pw:443
   - chainId: theta-testnet-001
     url: https://rpc.sentry-01.theta-testnet.polypore.xyz:443
   - chainId: umee-1
