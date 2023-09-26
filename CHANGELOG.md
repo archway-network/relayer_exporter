@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/archway-network/relayer_exporter/compare/v0.6.0...v0.7.0) (2023-09-26)
+
+
+### Features
+
+* Add status label for cosmos_ibc_client_expiry metric ([#14](https://github.com/archway-network/relayer_exporter/issues/14)) ([f0dffc0](https://github.com/archway-network/relayer_exporter/commit/f0dffc0e3fd001a107ada8ed4f478ad3d29bf701))
+
 ## [0.6.0](https://github.com/archway-network/relayer_exporter/compare/v0.5.0...v0.6.0) (2023-09-13)
 
 
