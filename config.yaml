@@ -26,6 +26,8 @@ rpc:
     url: https://rpc.osmotest5.osmosis.zone:443
   - chainId: osmosis-1
     url: https://osmosis-rpc.stakely.io:443
+  - chainId: quicksilver-2
+    url: https://rpc.quicksilver.zone:443
   - chainId: sandbox-01
     url: https://rpc.sandbox-01.aksh.pw:443
   - chainId: theta-testnet-001
