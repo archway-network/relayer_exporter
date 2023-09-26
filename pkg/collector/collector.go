@@ -13,6 +13,8 @@ import (
 )
 
 const (
+	successStatus           = "success"
+	errorStatus             = "error"
 	clientExpiryMetricName  = "cosmos_ibc_client_expiry"
 	walletBalanceMetricName = "cosmos_wallet_balance"
 )
@@ -21,7 +23,7 @@ var (
 	clientExpiry = prometheus.NewDesc(
 		clientExpiryMetricName,
 		"Returns light client expiry in unixtime.",
-		[]string{"host_chain_id", "client_id", "target_chain_id"}, nil,
+		[]string{"host_chain_id", "client_id", "target_chain_id", "status"}, nil,
 	)
 	walletBalance = prometheus.NewDesc(
 		walletBalanceMetricName,
@@ -47,23 +49,40 @@ func (cc IBCClientsCollector) Describe(ch chan<- *prometheus.Desc) {
 func (cc IBCClientsCollector) Collect(ch chan<- prometheus.Metric) {
 	log.Debug("Start collecting", zap.String("metric", clientExpiryMetricName))
 
-	clients := ibc.GetClientsInfos(cc.Paths, cc.RPCs)
+	var wg sync.WaitGroup
 
-	for _, c := range clients {
-		ch <- prometheus.MustNewConstMetric(
-			clientExpiry,
-			prometheus.GaugeValue,
-			float64(c.ChainAClientExpiration.Unix()),
-			[]string{c.ChainA.ChainID(), c.ChainA.ClientID(), c.ChainB.ChainID()}...,
-		)
+	for _, p := range cc.Paths {
+		wg.Add(1)
 
-		ch <- prometheus.MustNewConstMetric(
-			clientExpiry,
-			prometheus.GaugeValue,
-			float64(c.ChainBClientExpiration.Unix()),
-			[]string{c.ChainB.ChainID(), c.ChainB.ClientID(), c.ChainA.ChainID()}...,
-		)
+		go func(path *relayer.IBCdata) {
+			defer wg.Done()
+
+			ci, err := ibc.GetClientsInfo(path, cc.RPCs)
+			status := successStatus
+
+			if err != nil {
+				status = errorStatus
+
+				log.Error(err.Error())
+			}
+
+			ch <- prometheus.MustNewConstMetric(
+				clientExpiry,
+				prometheus.GaugeValue,
+				float64(ci.ChainAClientExpiration.Unix()),
+				[]string{path.Chain1.ChainName, path.Chain1.ClientID, path.Chain2.ChainName, status}...,
+			)
+
+			ch <- prometheus.MustNewConstMetric(
+				clientExpiry,
+				prometheus.GaugeValue,
+				float64(ci.ChainBClientExpiration.Unix()),
+				[]string{path.Chain2.ChainName, path.Chain2.ClientID, path.Chain1.ChainName, status}...,
+			)
+		}(p)
 	}
+
+	wg.Wait()
 
 	log.Debug("Stop collecting", zap.String("metric", clientExpiryMetricName))
 }
@@ -84,9 +103,12 @@ func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
 			defer wg.Done()
 
 			balance := 0.0
+			status := successStatus
 
 			err := account.GetBalance(wb.RPCs)
 			if err != nil {
+				status = errorStatus
+
 				log.Error(err.Error(), zap.Any("account", account))
 			} else {
 				// Convert to a big float to get a float64 for metrics
@@ -97,7 +119,7 @@ func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
 				walletBalance,
 				prometheus.GaugeValue,
 				balance,
-				[]string{account.Address, account.ChainID, account.Denom, account.Status}...,
+				[]string{account.Address, account.ChainID, account.Denom, status}...,
 			)
 		}(a)
 	}

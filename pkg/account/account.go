@@ -8,17 +8,11 @@ import (
 	"github.com/archway-network/relayer_exporter/pkg/chain"
 )
 
-const (
-	successStatus = "success"
-	errorStatus   = "error"
-)
-
 type Account struct {
 	Address string `yaml:"address"`
 	Denom   string `yaml:"denom"`
 	ChainID string `yaml:"chainId"`
 	Balance math.Int
-	Status  string
 }
 
 func (a *Account) GetBalance(rpcs map[string]string) error {
@@ -34,13 +28,10 @@ func (a *Account) GetBalance(rpcs map[string]string) error {
 
 	coins, err := chain.ChainProvider.QueryBalanceWithAddress(ctx, a.Address)
 	if err != nil {
-		a.Status = errorStatus
-
 		return err
 	}
 
 	a.Balance = coins.AmountOf(a.Denom)
-	a.Status = successStatus
 
 	return nil
 }

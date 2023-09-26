@@ -6,9 +6,7 @@ import (
 	"time"
 
 	"github.com/archway-network/relayer_exporter/pkg/chain"
-	log "github.com/archway-network/relayer_exporter/pkg/logger"
 	"github.com/cosmos/relayer/v2/relayer"
-	"github.com/google/go-cmp/cmp"
 )
 
 type ClientsInfo struct {
@@ -18,38 +16,6 @@ type ClientsInfo struct {
 	ChainB                 *relayer.Chain
 	ChainBClientInfo       relayer.ClientStateInfo
 	ChainBClientExpiration time.Time
-}
-
-func GetClientsInfos(ibcs []*relayer.IBCdata, rpcs map[string]string) []ClientsInfo {
-	num := len(ibcs)
-
-	out := make(chan ClientsInfo, num)
-	defer close(out)
-
-	for i := 0; i < num; i++ {
-		go func(i int) {
-			clientsInfo, err := GetClientsInfo(ibcs[i], rpcs)
-			if err != nil {
-				out <- ClientsInfo{}
-
-				log.Error(err.Error())
-
-				return
-			}
-			out <- clientsInfo
-		}(i)
-	}
-
-	clientsInfos := []ClientsInfo{}
-
-	for i := 0; i < num; i++ {
-		ci := <-out
-		if !cmp.Equal(ci, ClientsInfo{}) {
-			clientsInfos = append(clientsInfos, ci)
-		}
-	}
-
-	return clientsInfos
 }
 
 func GetClientsInfo(ibc *relayer.IBCdata, rpcs map[string]string) (ClientsInfo, error) {
