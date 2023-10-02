@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/archway-network/relayer_exporter/pkg/chain"
+	"github.com/archway-network/relayer_exporter/pkg/config"
 	"github.com/cosmos/relayer/v2/relayer"
 )
 
@@ -18,12 +19,12 @@ type ClientsInfo struct {
 	ChainBClientExpiration time.Time
 }
 
-func GetClientsInfo(ibc *relayer.IBCdata, rpcs map[string]string) (ClientsInfo, error) {
+func GetClientsInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (ClientsInfo, error) {
 	clientsInfo := ClientsInfo{}
 
 	cdA := chain.Info{
-		ChainID:  ibc.Chain1.ChainName,
-		RPCAddr:  rpcs[ibc.Chain1.ChainName],
+		ChainID:  (*rpcs)[ibc.Chain1.ChainName].ChainID,
+		RPCAddr:  (*rpcs)[ibc.Chain1.ChainName].URL,
 		ClientID: ibc.Chain1.ClientID,
 	}
 
@@ -35,8 +36,8 @@ func GetClientsInfo(ibc *relayer.IBCdata, rpcs map[string]string) (ClientsInfo, 
 	clientsInfo.ChainA = chainA
 
 	cdB := chain.Info{
-		ChainID:  ibc.Chain2.ChainName,
-		RPCAddr:  rpcs[ibc.Chain2.ChainName],
+		ChainID:  (*rpcs)[ibc.Chain2.ChainName].ChainID,
+		RPCAddr:  (*rpcs)[ibc.Chain2.ChainName].URL,
 		ClientID: ibc.Chain2.ClientID,
 	}
 

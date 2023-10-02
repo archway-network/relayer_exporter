@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"sync"
 
-	"github.com/archway-network/relayer_exporter/pkg/account"
+	"github.com/archway-network/relayer_exporter/pkg/config"
 	"github.com/archway-network/relayer_exporter/pkg/ibc"
 	log "github.com/archway-network/relayer_exporter/pkg/logger"
 	"github.com/cosmos/relayer/v2/relayer"
@@ -33,13 +33,13 @@ var (
 )
 
 type IBCClientsCollector struct {
-	RPCs  map[string]string
+	RPCs  *map[string]config.RPC
 	Paths []*relayer.IBCdata
 }
 
 type WalletBalanceCollector struct {
-	RPCs     map[string]string
-	Accounts []account.Account
+	RPCs     *map[string]config.RPC
+	Accounts []config.Account
 }
 
 func (cc IBCClientsCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -70,14 +70,14 @@ func (cc IBCClientsCollector) Collect(ch chan<- prometheus.Metric) {
 				clientExpiry,
 				prometheus.GaugeValue,
 				float64(ci.ChainAClientExpiration.Unix()),
-				[]string{path.Chain1.ChainName, path.Chain1.ClientID, path.Chain2.ChainName, status}...,
+				[]string{(*cc.RPCs)[path.Chain1.ChainName].ChainID, path.Chain1.ClientID, (*cc.RPCs)[path.Chain2.ChainName].ChainID, status}...,
 			)
 
 			ch <- prometheus.MustNewConstMetric(
 				clientExpiry,
 				prometheus.GaugeValue,
 				float64(ci.ChainBClientExpiration.Unix()),
-				[]string{path.Chain2.ChainName, path.Chain2.ClientID, path.Chain1.ChainName, status}...,
+				[]string{(*cc.RPCs)[path.Chain2.ChainName].ChainID, path.Chain2.ClientID, (*cc.RPCs)[path.Chain1.ChainName].ChainID, status}...,
 			)
 		}(p)
 	}
@@ -99,7 +99,7 @@ func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
 	for _, a := range wb.Accounts {
 		wg.Add(1)
 
-		go func(account account.Account) {
+		go func(account config.Account) {
 			defer wg.Done()
 
 			balance := 0.0
@@ -119,7 +119,7 @@ func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
 				walletBalance,
 				prometheus.GaugeValue,
 				balance,
-				[]string{account.Address, account.ChainID, account.Denom, status}...,
+				[]string{account.Address, (*wb.RPCs)[account.ChainName].ChainID, account.Denom, status}...,
 			)
 		}(a)
 	}
