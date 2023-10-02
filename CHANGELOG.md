@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/archway-network/relayer_exporter/compare/v0.7.0...v0.7.1) (2023-10-02)
+
+
+### Bug Fixes
+
+* Use name instead id for chain name ([#16](https://github.com/archway-network/relayer_exporter/issues/16)) ([ae320e5](https://github.com/archway-network/relayer_exporter/commit/ae320e5a612f14a1ded2f03247a60e9931a40069))
+
 ## [0.7.0](https://github.com/archway-network/relayer_exporter/compare/v0.6.0...v0.7.0) (2023-09-26)
 
 
