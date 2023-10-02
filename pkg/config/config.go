@@ -6,25 +6,34 @@ import (
 	"os"
 	"strings"
 
+	"cosmossdk.io/math"
 	"github.com/caarlos0/env/v9"
 	"github.com/cosmos/relayer/v2/relayer"
 	"github.com/google/go-github/v55/github"
 	"gopkg.in/yaml.v3"
 
-	"github.com/archway-network/relayer_exporter/pkg/account"
+	"github.com/archway-network/relayer_exporter/pkg/chain"
 	log "github.com/archway-network/relayer_exporter/pkg/logger"
 )
 
 const ibcPathSuffix = ".json"
 
+type Account struct {
+	Address   string `yaml:"address"`
+	Denom     string `yaml:"denom"`
+	ChainName string `yaml:"chainName"`
+	Balance   math.Int
+}
+
 type RPC struct {
-	ChainID string `yaml:"chainId"`
-	URL     string `yaml:"url"`
+	ChainName string `yaml:"chainName"`
+	ChainID   string `yaml:"chainId"`
+	URL       string `yaml:"url"`
 }
 
 type Config struct {
-	Accounts []account.Account `yaml:"accounts"`
-	RPCs     []RPC             `yaml:"rpc"`
+	Accounts []Account `yaml:"accounts"`
+	RPCs     []RPC     `yaml:"rpc"`
 	GitHub   struct {
 		Org    string `yaml:"org"`
 		Repo   string `yaml:"repo"`
@@ -33,14 +42,35 @@ type Config struct {
 	} `yaml:"github"`
 }
 
-func (c *Config) GetRPCsMap() map[string]string {
-	rpcs := map[string]string{}
-
-	for _, rpc := range c.RPCs {
-		rpcs[rpc.ChainID] = rpc.URL
+func (a *Account) GetBalance(rpcs *map[string]RPC) error {
+	chain, err := chain.PrepChain(chain.Info{
+		ChainID: (*rpcs)[a.ChainName].ChainID,
+		RPCAddr: (*rpcs)[a.ChainName].URL,
+	})
+	if err != nil {
+		return err
 	}
 
-	return rpcs
+	ctx := context.Background()
+
+	coins, err := chain.ChainProvider.QueryBalanceWithAddress(ctx, a.Address)
+	if err != nil {
+		return err
+	}
+
+	a.Balance = coins.AmountOf(a.Denom)
+
+	return nil
+}
+
+func (c *Config) GetRPCsMap() *map[string]RPC {
+	rpcs := map[string]RPC{}
+
+	for _, rpc := range c.RPCs {
+		rpcs[rpc.ChainName] = rpc
+	}
+
+	return &rpcs
 }
 
 func (c *Config) IBCPaths() ([]*relayer.IBCdata, error) {
