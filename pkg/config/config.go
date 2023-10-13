@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"strings"
 
@@ -17,6 +18,8 @@ import (
 )
 
 const ibcPathSuffix = ".json"
+
+var ErrGitHubClient = errors.New("GitHub client not provided")
 
 type Account struct {
 	Address   string `yaml:"address"`
@@ -35,10 +38,11 @@ type Config struct {
 	Accounts []Account `yaml:"accounts"`
 	RPCs     []RPC     `yaml:"rpc"`
 	GitHub   struct {
-		Org    string `yaml:"org"`
-		Repo   string `yaml:"repo"`
-		IBCDir string `yaml:"dir"`
-		Token  string `env:"GITHUB_TOKEN"`
+		Org            string `yaml:"org"`
+		Repo           string `yaml:"repo"`
+		IBCDir         string `yaml:"dir"`
+		TestnetsIBCDir string `yaml:"testnetsDir"`
+		Token          string `env:"GITHUB_TOKEN"`
 	} `yaml:"github"`
 }
 
@@ -74,8 +78,6 @@ func (c *Config) GetRPCsMap() *map[string]RPC {
 }
 
 func (c *Config) IBCPaths() ([]*relayer.IBCdata, error) {
-	ctx := context.Background()
-
 	client := github.NewClient(nil)
 
 	if c.GitHub.Token != "" {
@@ -84,7 +86,32 @@ func (c *Config) IBCPaths() ([]*relayer.IBCdata, error) {
 		client = github.NewClient(nil).WithAuthToken(c.GitHub.Token)
 	}
 
-	_, ibcDir, _, err := client.Repositories.GetContents(ctx, c.GitHub.Org, c.GitHub.Repo, c.GitHub.IBCDir, nil)
+	paths, err := c.getPaths(c.GitHub.IBCDir, client)
+	if err != nil {
+		return nil, err
+	}
+
+	testnetsPaths := []*relayer.IBCdata{}
+	if c.GitHub.TestnetsIBCDir != "" {
+		testnetsPaths, err = c.getPaths(c.GitHub.TestnetsIBCDir, client)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	paths = append(paths, testnetsPaths...)
+
+	return paths, nil
+}
+
+func (c *Config) getPaths(dir string, client *github.Client) ([]*relayer.IBCdata, error) {
+	if client == nil {
+		return nil, ErrGitHubClient
+	}
+
+	ctx := context.Background()
+
+	_, ibcDir, _, err := client.Repositories.GetContents(ctx, c.GitHub.Org, c.GitHub.Repo, dir, nil)
 	if err != nil {
 		return nil, err
 	}
