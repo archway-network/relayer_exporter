@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/archway-network/relayer_exporter/compare/v0.7.1...v0.8.0) (2023-10-16)
+
+
+### Features
+
+* Use separate dir for testnets IBC paths ([#19](https://github.com/archway-network/relayer_exporter/issues/19)) ([3ed83c0](https://github.com/archway-network/relayer_exporter/commit/3ed83c03836df28c90889478f068d7be3ae359d5))
+
 ## [0.7.1](https://github.com/archway-network/relayer_exporter/compare/v0.7.0...v0.7.1) (2023-10-02)
 
 
