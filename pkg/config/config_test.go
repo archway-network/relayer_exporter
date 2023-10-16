@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -38,4 +39,19 @@ func TestGetRPCsMap(t *testing.T) {
 	res := cfg.GetRPCsMap()
 
 	assert.Equal(t, &exp, res)
+}
+
+func TestGetPaths(t *testing.T) {
+	cfg := Config{}
+
+	expError := ErrGitHubClient
+
+	_, err := cfg.getPaths("_IBC", nil)
+	if err == nil {
+		t.Fatalf("Expected error %q, got no error", expError)
+	}
+
+	if !errors.Is(err, expError) {
+		t.Errorf("Expected error %q, got %q", expError, err)
+	}
 }

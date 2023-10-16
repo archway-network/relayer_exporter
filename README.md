@@ -22,6 +22,7 @@ github:
   org: archway-network
   repo: networks
   dir: _IBC
+  testnetsDir: testnets/_IBC
 
 accounts:
   - address: archway1l2al7y78500h5akvgt8exwnkpmf2zmk8ky9ht3
