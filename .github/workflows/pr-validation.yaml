@@ -18,7 +18,7 @@ jobs:
         with:
           go_version_file: go.mod
           tool_name: GolangCI Lint
-          golangci_lint_flags: --config=.golangci.yaml
+          golangci_lint_flags: --config=.golangci.yaml --timeout=10m
           fail_on_error: true
   run-tests:
     name: Tests

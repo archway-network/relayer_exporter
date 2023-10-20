@@ -35,7 +35,7 @@ rpc:
     url: https://noble-rpc.polkachu.com:443
   - chainName: nois
     chainId: nois-1
-    url: https://nois-rpc.polkachu.com:443
+    url: https://rpc.cosmos.directory/nois:443
   - chainName: osmosistestnet
     chainId: osmo-test-5
     url: https://rpc.osmotest5.osmosis.zone:443
