@@ -1,22 +1,25 @@
 package collector
 
 import (
+	"fmt"
 	"math/big"
 	"sync"
+
+	"github.com/cosmos/relayer/v2/relayer"
+	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
 
 	"github.com/archway-network/relayer_exporter/pkg/config"
 	"github.com/archway-network/relayer_exporter/pkg/ibc"
 	log "github.com/archway-network/relayer_exporter/pkg/logger"
-	"github.com/cosmos/relayer/v2/relayer"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
 )
 
 const (
-	successStatus           = "success"
-	errorStatus             = "error"
-	clientExpiryMetricName  = "cosmos_ibc_client_expiry"
-	walletBalanceMetricName = "cosmos_wallet_balance"
+	successStatus                 = "success"
+	errorStatus                   = "error"
+	clientExpiryMetricName        = "cosmos_ibc_client_expiry"
+	walletBalanceMetricName       = "cosmos_wallet_balance"
+	channelStuckPacketsMetricName = "cosmos_ibc_stuck_packets"
 )
 
 var (
@@ -25,6 +28,19 @@ var (
 		"Returns light client expiry in unixtime.",
 		[]string{"host_chain_id", "client_id", "target_chain_id", "status"}, nil,
 	)
+	channelStuckPackets = prometheus.NewDesc(
+		channelStuckPacketsMetricName,
+		"Returns stuck packets for a channel.",
+		[]string{
+			"src_chain_id",
+			"channel_id",
+			"target_chain_id",
+			"source_stuck_packets",
+			"destination_stuck_packets",
+			"status",
+		},
+		nil,
+	)
 	walletBalance = prometheus.NewDesc(
 		walletBalanceMetricName,
 		"Returns wallet balance for an address on a chain.",
@@ -32,7 +48,7 @@ var (
 	)
 )
 
-type IBCClientsCollector struct {
+type IBCCollector struct {
 	RPCs  *map[string]config.RPC
 	Paths []*relayer.IBCdata
 }
@@ -42,12 +58,19 @@ type WalletBalanceCollector struct {
 	Accounts []config.Account
 }
 
-func (cc IBCClientsCollector) Describe(ch chan<- *prometheus.Desc) {
+func (cc IBCCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- clientExpiry
+	ch <- channelStuckPackets
 }
 
-func (cc IBCClientsCollector) Collect(ch chan<- prometheus.Metric) {
-	log.Debug("Start collecting", zap.String("metric", clientExpiryMetricName))
+func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
+	log.Debug(
+		"Start collecting",
+		zap.String(
+			"metrics",
+			fmt.Sprintf("%s, %s", clientExpiryMetricName, channelStuckPacketsMetricName),
+		),
+	)
 
 	var wg sync.WaitGroup
 
@@ -65,6 +88,27 @@ func (cc IBCClientsCollector) Collect(ch chan<- prometheus.Metric) {
 
 				log.Error(err.Error())
 			}
+
+			sp, err := ibc.GetChannelInfo(path, cc.RPCs)
+			if err != nil {
+				status = errorStatus
+
+				log.Error(err.Error())
+			}
+
+			ch <- prometheus.MustNewConstMetric(
+				channelStuckPackets,
+				prometheus.GaugeValue,
+				float64(sp.StuckPackets.Source+sp.StuckPackets.Destination),
+				[]string{
+					(*cc.RPCs)[path.Chain1.ChainName].ChainID,
+					path.Channels[0].Chain1.ChannelID,
+					(*cc.RPCs)[path.Chain2.ChainName].ChainID,
+					fmt.Sprintf("%d", sp.StuckPackets.Source),
+					fmt.Sprintf("%d", sp.StuckPackets.Destination),
+					status,
+				}...,
+			)
 
 			ch <- prometheus.MustNewConstMetric(
 				clientExpiry,
