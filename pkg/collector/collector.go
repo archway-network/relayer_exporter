@@ -111,6 +111,20 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 				log.Error(err.Error())
 			}
 
+			ch <- prometheus.MustNewConstMetric(
+				clientExpiry,
+				prometheus.GaugeValue,
+				float64(ci.ChainAClientExpiration.Unix()),
+				[]string{(*cc.RPCs)[path.Chain1.ChainName].ChainID, path.Chain1.ClientID, (*cc.RPCs)[path.Chain2.ChainName].ChainID, status}...,
+			)
+
+			ch <- prometheus.MustNewConstMetric(
+				clientExpiry,
+				prometheus.GaugeValue,
+				float64(ci.ChainBClientExpiration.Unix()),
+				[]string{(*cc.RPCs)[path.Chain2.ChainName].ChainID, path.Chain2.ClientID, (*cc.RPCs)[path.Chain1.ChainName].ChainID, status}...,
+			)
+
 			stuckPackets, err := ibc.GetChannelInfo(path, cc.RPCs)
 			if err != nil {
 				status = errorStatus
@@ -155,20 +169,6 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 					}...,
 				)
 			}
-
-			ch <- prometheus.MustNewConstMetric(
-				clientExpiry,
-				prometheus.GaugeValue,
-				float64(ci.ChainAClientExpiration.Unix()),
-				[]string{(*cc.RPCs)[path.Chain1.ChainName].ChainID, path.Chain1.ClientID, (*cc.RPCs)[path.Chain2.ChainName].ChainID, status}...,
-			)
-
-			ch <- prometheus.MustNewConstMetric(
-				clientExpiry,
-				prometheus.GaugeValue,
-				float64(ci.ChainBClientExpiration.Unix()),
-				[]string{(*cc.RPCs)[path.Chain2.ChainName].ChainID, path.Chain2.ClientID, (*cc.RPCs)[path.Chain1.ChainName].ChainID, status}...,
-			)
 		}(p)
 	}
 

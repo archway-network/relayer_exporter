@@ -90,6 +90,12 @@ func GetChannelInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (Channels
 	ctx := context.Background()
 	channelInfo := ChannelsInfo{}
 
+	if (*rpcs)[ibc.Chain1.ChainName].ChainID == "" || (*rpcs)[ibc.Chain2.ChainName].ChainID == "" {
+		return ChannelsInfo{}, fmt.Errorf(
+			"Error: RPC data is missing, cannot retrieve channel data",
+		)
+	}
+
 	cdA := chain.Info{
 		ChainID:  (*rpcs)[ibc.Chain1.ChainName].ChainID,
 		RPCAddr:  (*rpcs)[ibc.Chain1.ChainName].URL,
