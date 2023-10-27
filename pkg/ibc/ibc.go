@@ -21,10 +21,16 @@ type ClientsInfo struct {
 	ChainBClientExpiration time.Time
 }
 
-type ChannelInfo struct {
+type ChannelsInfo struct {
+	Channels []Channel
+}
+
+type Channel struct {
+	Name         string
 	StuckPackets struct {
 		Source      int
 		Destination int
+		Total       int
 	}
 }
 
@@ -80,9 +86,9 @@ func GetClientsInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (ClientsI
 	return clientsInfo, nil
 }
 
-func GetChannelInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (ChannelInfo, error) {
+func GetChannelInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (ChannelsInfo, error) {
 	ctx := context.Background()
-	channelInfo := ChannelInfo{}
+	channelInfo := ChannelsInfo{}
 
 	cdA := chain.Info{
 		ChainID:  (*rpcs)[ibc.Chain1.ChainName].ChainID,
@@ -92,7 +98,7 @@ func GetChannelInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (ChannelI
 
 	chainA, err := chain.PrepChain(cdA)
 	if err != nil {
-		return ChannelInfo{}, fmt.Errorf("Error: %w for %v", err, cdA)
+		return ChannelsInfo{}, fmt.Errorf("Error: %w for %v", err, cdA)
 	}
 
 	cdB := chain.Info{
@@ -103,11 +109,15 @@ func GetChannelInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (ChannelI
 
 	chainB, err := chain.PrepChain(cdB)
 	if err != nil {
-		return ChannelInfo{}, fmt.Errorf("Error: %w for %v", err, cdB)
+		return ChannelsInfo{}, fmt.Errorf("Error: %w for %v", err, cdB)
 	}
 
 	for _, c := range ibc.Channels {
 		var order chantypes.Order
+
+		var channel Channel
+
+		channel.Name = c.Chain1.ChannelID
 
 		switch c.Ordering {
 		case "none":
@@ -118,7 +128,7 @@ func GetChannelInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (ChannelI
 			order = chantypes.ORDERED
 		}
 
-		channel := chantypes.IdentifiedChannel{
+		ch := chantypes.IdentifiedChannel{
 			State:    3,
 			Ordering: order,
 			Counterparty: chantypes.Counterparty{
@@ -129,9 +139,13 @@ func GetChannelInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (ChannelI
 			ChannelId: c.Chain2.ChannelID,
 		}
 
-		unrelayedSequences := relayer.UnrelayedSequences(ctx, chainA, chainB, &channel)
-		channelInfo.StuckPackets.Source += len(unrelayedSequences.Src)
-		channelInfo.StuckPackets.Destination += len(unrelayedSequences.Dst)
+		unrelayedSequences := relayer.UnrelayedSequences(ctx, chainA, chainB, &ch)
+
+		channel.StuckPackets.Total += len(unrelayedSequences.Src) + len(unrelayedSequences.Dst)
+		channel.StuckPackets.Source += len(unrelayedSequences.Src)
+		channel.StuckPackets.Destination += len(unrelayedSequences.Dst)
+
+		channelInfo.Channels = append(channelInfo.Channels, channel)
 	}
 
 	return channelInfo, nil

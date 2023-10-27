@@ -15,11 +15,13 @@ import (
 )
 
 const (
-	successStatus                 = "success"
-	errorStatus                   = "error"
-	clientExpiryMetricName        = "cosmos_ibc_client_expiry"
-	walletBalanceMetricName       = "cosmos_wallet_balance"
-	channelStuckPacketsMetricName = "cosmos_ibc_stuck_packets"
+	successStatus                    = "success"
+	errorStatus                      = "error"
+	clientExpiryMetricName           = "cosmos_ibc_client_expiry"
+	walletBalanceMetricName          = "cosmos_wallet_balance"
+	channelStuckPacketsMetricName    = "cosmos_ibc_stuck_packets_total"
+	channelSrcStuckPacketsMetricName = "cosmos_ibc_stuck_packets_src"
+	channelDstStuckPacketsMetricName = "cosmos_ibc_stuck_packets_dst"
 )
 
 var (
@@ -32,11 +34,31 @@ var (
 		channelStuckPacketsMetricName,
 		"Returns stuck packets for a channel.",
 		[]string{
-			"src_chain_id",
 			"channel_id",
-			"target_chain_id",
-			"source_stuck_packets",
-			"destination_stuck_packets",
+			"src_chain_id",
+			"dst_chain_id",
+			"status",
+		},
+		nil,
+	)
+	channelSrcStuckPackets = prometheus.NewDesc(
+		channelSrcStuckPacketsMetricName,
+		"Returns source stuck packets for a channel.",
+		[]string{
+			"channel_id",
+			"src_chain_id",
+			"dst_chain_id",
+			"status",
+		},
+		nil,
+	)
+	channelDstStuckPackets = prometheus.NewDesc(
+		channelDstStuckPacketsMetricName,
+		"Returns destination stuck packets for a channel.",
+		[]string{
+			"channel_id",
+			"src_chain_id",
+			"dst_chain_id",
 			"status",
 		},
 		nil,
@@ -89,26 +111,50 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 				log.Error(err.Error())
 			}
 
-			sp, err := ibc.GetChannelInfo(path, cc.RPCs)
+			stuckPackets, err := ibc.GetChannelInfo(path, cc.RPCs)
 			if err != nil {
 				status = errorStatus
 
 				log.Error(err.Error())
 			}
 
-			ch <- prometheus.MustNewConstMetric(
-				channelStuckPackets,
-				prometheus.GaugeValue,
-				float64(sp.StuckPackets.Source+sp.StuckPackets.Destination),
-				[]string{
-					(*cc.RPCs)[path.Chain1.ChainName].ChainID,
-					path.Channels[0].Chain1.ChannelID,
-					(*cc.RPCs)[path.Chain2.ChainName].ChainID,
-					fmt.Sprintf("%d", sp.StuckPackets.Source),
-					fmt.Sprintf("%d", sp.StuckPackets.Destination),
-					status,
-				}...,
-			)
+			for _, sp := range stuckPackets.Channels {
+				ch <- prometheus.MustNewConstMetric(
+					channelStuckPackets,
+					prometheus.GaugeValue,
+					float64(sp.StuckPackets.Total),
+					[]string{
+						sp.Name,
+						(*cc.RPCs)[path.Chain1.ChainName].ChainID,
+						(*cc.RPCs)[path.Chain2.ChainName].ChainID,
+						status,
+					}...,
+				)
+
+				ch <- prometheus.MustNewConstMetric(
+					channelSrcStuckPackets,
+					prometheus.GaugeValue,
+					float64(sp.StuckPackets.Source),
+					[]string{
+						sp.Name,
+						(*cc.RPCs)[path.Chain1.ChainName].ChainID,
+						(*cc.RPCs)[path.Chain2.ChainName].ChainID,
+						status,
+					}...,
+				)
+
+				ch <- prometheus.MustNewConstMetric(
+					channelDstStuckPackets,
+					prometheus.GaugeValue,
+					float64(sp.StuckPackets.Destination),
+					[]string{
+						sp.Name,
+						(*cc.RPCs)[path.Chain1.ChainName].ChainID,
+						(*cc.RPCs)[path.Chain2.ChainName].ChainID,
+						status,
+					}...,
+				)
+			}
 
 			ch <- prometheus.MustNewConstMetric(
 				clientExpiry,
