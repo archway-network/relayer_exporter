@@ -34,7 +34,8 @@ var (
 		channelStuckPacketsMetricName,
 		"Returns stuck packets for a channel.",
 		[]string{
-			"channel_id",
+			"src_channel_id",
+			"dst_channel_id",
 			"src_chain_id",
 			"dst_chain_id",
 			"status",
@@ -45,7 +46,8 @@ var (
 		channelSrcStuckPacketsMetricName,
 		"Returns source stuck packets for a channel.",
 		[]string{
-			"channel_id",
+			"src_channel_id",
+			"dst_channel_id",
 			"src_chain_id",
 			"dst_chain_id",
 			"status",
@@ -56,7 +58,8 @@ var (
 		channelDstStuckPacketsMetricName,
 		"Returns destination stuck packets for a channel.",
 		[]string{
-			"channel_id",
+			"src_channel_id",
+			"dst_channel_id",
 			"src_chain_id",
 			"dst_chain_id",
 			"status",
@@ -129,6 +132,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 			if err != nil {
 				status = errorStatus
 
+				fmt.Println("FOOOOBAAAAR")
 				log.Error(err.Error())
 			}
 
@@ -138,7 +142,8 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 					prometheus.GaugeValue,
 					float64(sp.StuckPackets.Total),
 					[]string{
-						sp.Name,
+						sp.Source,
+						sp.Destination,
 						(*cc.RPCs)[path.Chain1.ChainName].ChainID,
 						(*cc.RPCs)[path.Chain2.ChainName].ChainID,
 						status,
@@ -150,7 +155,8 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 					prometheus.GaugeValue,
 					float64(sp.StuckPackets.Source),
 					[]string{
-						sp.Name,
+						sp.Source,
+						sp.Destination,
 						(*cc.RPCs)[path.Chain1.ChainName].ChainID,
 						(*cc.RPCs)[path.Chain2.ChainName].ChainID,
 						status,
@@ -162,7 +168,8 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 					prometheus.GaugeValue,
 					float64(sp.StuckPackets.Destination),
 					[]string{
-						sp.Name,
+						sp.Source,
+						sp.Destination,
 						(*cc.RPCs)[path.Chain1.ChainName].ChainID,
 						(*cc.RPCs)[path.Chain2.ChainName].ChainID,
 						status,

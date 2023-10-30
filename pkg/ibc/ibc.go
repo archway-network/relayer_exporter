@@ -28,7 +28,8 @@ type ChannelsInfo struct {
 }
 
 type Channel struct {
-	Name         string
+	Source       string
+	Destination  string
 	StuckPackets struct {
 		Source      int
 		Destination int
@@ -133,7 +134,8 @@ func GetChannelsInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (Channel
 
 		var channel Channel
 
-		channel.Name = c.Chain1.ChannelID
+		channel.Source = c.Chain1.ChannelID
+		channel.Destination = c.Chain2.ChannelID
 
 		switch c.Ordering {
 		case "none":
