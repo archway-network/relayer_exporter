@@ -125,7 +125,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 				[]string{(*cc.RPCs)[path.Chain2.ChainName].ChainID, path.Chain2.ClientID, (*cc.RPCs)[path.Chain1.ChainName].ChainID, status}...,
 			)
 
-			stuckPackets, err := ibc.GetChannelInfo(path, cc.RPCs)
+			stuckPackets, err := ibc.GetChannelsInfo(path, cc.RPCs)
 			if err != nil {
 				status = errorStatus
 

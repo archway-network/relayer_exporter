@@ -88,7 +88,7 @@ func GetClientsInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (ClientsI
 	return clientsInfo, nil
 }
 
-func GetChannelInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (ChannelsInfo, error) {
+func GetChannelsInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (ChannelsInfo, error) {
 	ctx := context.Background()
 	channelInfo := ChannelsInfo{}
 
