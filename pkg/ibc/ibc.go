@@ -12,6 +12,8 @@ import (
 	"github.com/archway-network/relayer_exporter/pkg/config"
 )
 
+const stateOpen = 3
+
 type ClientsInfo struct {
 	ChainA                 *relayer.Chain
 	ChainAClientInfo       relayer.ClientStateInfo
@@ -135,7 +137,7 @@ func GetChannelInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (Channels
 		}
 
 		ch := chantypes.IdentifiedChannel{
-			State:    3,
+			State:    stateOpen,
 			Ordering: order,
 			Counterparty: chantypes.Counterparty{
 				PortId:    c.Chain2.PortID,
