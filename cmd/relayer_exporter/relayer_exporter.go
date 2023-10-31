@@ -6,11 +6,12 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/archway-network/relayer_exporter/pkg/collector"
 	"github.com/archway-network/relayer_exporter/pkg/config"
 	log "github.com/archway-network/relayer_exporter/pkg/logger"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
@@ -42,7 +43,14 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	log.Info(fmt.Sprintf("Getting IBC paths from %s/%s/%s on GitHub", cfg.GitHub.Org, cfg.GitHub.Repo, cfg.GitHub.IBCDir))
+	log.Info(
+		fmt.Sprintf(
+			"Getting IBC paths from %s/%s/%s on GitHub",
+			cfg.GitHub.Org,
+			cfg.GitHub.Repo,
+			cfg.GitHub.IBCDir,
+		),
+	)
 
 	// TODO: Add a feature to refresh paths at configured interval
 	paths, err := cfg.IBCPaths()
@@ -52,7 +60,7 @@ func main() {
 
 	rpcs := cfg.GetRPCsMap()
 
-	clientsCollector := collector.IBCClientsCollector{
+	ibcCollector := collector.IBCCollector{
 		RPCs:  rpcs,
 		Paths: paths,
 	}
@@ -62,7 +70,7 @@ func main() {
 		Accounts: cfg.Accounts,
 	}
 
-	prometheus.MustRegister(clientsCollector)
+	prometheus.MustRegister(ibcCollector)
 	prometheus.MustRegister(balancesCollector)
 
 	http.Handle("/metrics", promhttp.Handler())

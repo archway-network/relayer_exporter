@@ -5,6 +5,7 @@ import (
 
 	"github.com/cosmos/relayer/v2/relayer"
 	"github.com/cosmos/relayer/v2/relayer/chains/cosmos"
+	"go.uber.org/zap"
 )
 
 const (
@@ -19,7 +20,7 @@ type Info struct {
 }
 
 func PrepChain(info Info) (*relayer.Chain, error) {
-	chain := relayer.Chain{}
+	logger := zap.NewNop()
 	providerConfig := cosmos.CosmosProviderConfig{
 		ChainID:        info.ChainID,
 		Timeout:        rpcTimeout,
@@ -37,12 +38,12 @@ func PrepChain(info Info) (*relayer.Chain, error) {
 		return nil, err
 	}
 
-	chain.ChainProvider = provider
+	chain := relayer.NewChain(logger, provider, false)
 
 	err = chain.SetPath(&relayer.PathEnd{ClientID: info.ClientID})
 	if err != nil {
 		return nil, err
 	}
 
-	return &chain, nil
+	return chain, nil
 }
