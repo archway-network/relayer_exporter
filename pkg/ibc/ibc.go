@@ -24,6 +24,8 @@ type ClientsInfo struct {
 }
 
 type ChannelsInfo struct {
+	ChainA   *relayer.Chain
+	ChainB   *relayer.Chain
 	Channels []Channel
 }
 
@@ -126,7 +128,14 @@ func GetChannelsInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (Channel
 	if _, _, err := relayer.QueryLatestHeights(
 		ctx, chainA, chainB,
 	); err != nil {
-		return ChannelsInfo{}, fmt.Errorf("Error: %w for %v", err, cdA)
+		for _, c := range ibc.Channels {
+			var channel Channel
+			channel.Source = c.Chain1.ChannelID
+			channel.Destination = c.Chain2.ChannelID
+			channelInfo.Channels = append(channelInfo.Channels, channel)
+		}
+
+		return channelInfo, fmt.Errorf("Error: %w for %v", err, cdA)
 	}
 
 	for _, c := range ibc.Channels {

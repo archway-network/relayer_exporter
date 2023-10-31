@@ -3,6 +3,7 @@ package collector
 import (
 	"fmt"
 	"math/big"
+	"reflect"
 	"sync"
 
 	"github.com/cosmos/relayer/v2/relayer"
@@ -132,49 +133,50 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 			if err != nil {
 				status = errorStatus
 
-				fmt.Println("FOOOOBAAAAR")
 				log.Error(err.Error())
 			}
 
-			for _, sp := range stuckPackets.Channels {
-				ch <- prometheus.MustNewConstMetric(
-					channelStuckPackets,
-					prometheus.GaugeValue,
-					float64(sp.StuckPackets.Total),
-					[]string{
-						sp.Source,
-						sp.Destination,
-						(*cc.RPCs)[path.Chain1.ChainName].ChainID,
-						(*cc.RPCs)[path.Chain2.ChainName].ChainID,
-						status,
-					}...,
-				)
+			if !reflect.DeepEqual(stuckPackets, ibc.ChannelsInfo{}) {
+				for _, sp := range stuckPackets.Channels {
+					ch <- prometheus.MustNewConstMetric(
+						channelStuckPackets,
+						prometheus.GaugeValue,
+						float64(sp.StuckPackets.Total),
+						[]string{
+							sp.Source,
+							sp.Destination,
+							(*cc.RPCs)[path.Chain1.ChainName].ChainID,
+							(*cc.RPCs)[path.Chain2.ChainName].ChainID,
+							status,
+						}...,
+					)
 
-				ch <- prometheus.MustNewConstMetric(
-					channelSrcStuckPackets,
-					prometheus.GaugeValue,
-					float64(sp.StuckPackets.Source),
-					[]string{
-						sp.Source,
-						sp.Destination,
-						(*cc.RPCs)[path.Chain1.ChainName].ChainID,
-						(*cc.RPCs)[path.Chain2.ChainName].ChainID,
-						status,
-					}...,
-				)
+					ch <- prometheus.MustNewConstMetric(
+						channelSrcStuckPackets,
+						prometheus.GaugeValue,
+						float64(sp.StuckPackets.Source),
+						[]string{
+							sp.Source,
+							sp.Destination,
+							(*cc.RPCs)[path.Chain1.ChainName].ChainID,
+							(*cc.RPCs)[path.Chain2.ChainName].ChainID,
+							status,
+						}...,
+					)
 
-				ch <- prometheus.MustNewConstMetric(
-					channelDstStuckPackets,
-					prometheus.GaugeValue,
-					float64(sp.StuckPackets.Destination),
-					[]string{
-						sp.Source,
-						sp.Destination,
-						(*cc.RPCs)[path.Chain1.ChainName].ChainID,
-						(*cc.RPCs)[path.Chain2.ChainName].ChainID,
-						status,
-					}...,
-				)
+					ch <- prometheus.MustNewConstMetric(
+						channelDstStuckPackets,
+						prometheus.GaugeValue,
+						float64(sp.StuckPackets.Destination),
+						[]string{
+							sp.Source,
+							sp.Destination,
+							(*cc.RPCs)[path.Chain1.ChainName].ChainID,
+							(*cc.RPCs)[path.Chain2.ChainName].ChainID,
+							status,
+						}...,
+					)
+				}
 			}
 		}(p)
 	}
