@@ -135,13 +135,6 @@ func GetChannelsInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (Channel
 		return ChannelsInfo{}, fmt.Errorf("Error: %w for %v", err, cdB)
 	}
 
-	// test that RPC endpoints are working
-	if _, _, err := relayer.QueryLatestHeights(
-		ctx, chainA, chainB,
-	); err != nil {
-		return channelInfo, fmt.Errorf("Error: %w for %v", err, cdA)
-	}
-
 	for i, c := range channelInfo.Channels {
 		var order chantypes.Order
 
