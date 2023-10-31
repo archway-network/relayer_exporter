@@ -80,6 +80,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 		go func(path *relayer.IBCdata) {
 			defer wg.Done()
 
+			// Client info
 			ci, err := ibc.GetClientsInfo(path, cc.RPCs)
 			status := successStatus
 
@@ -102,6 +103,9 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 				float64(ci.ChainBClientExpiration.Unix()),
 				[]string{(*cc.RPCs)[path.Chain2.ChainName].ChainID, path.Chain2.ClientID, (*cc.RPCs)[path.Chain1.ChainName].ChainID, status}...,
 			)
+
+			// Stuck packets
+			status = successStatus
 
 			stuckPackets, err := ibc.GetChannelsInfo(path, cc.RPCs)
 			if err != nil {
