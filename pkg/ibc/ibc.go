@@ -24,18 +24,18 @@ type ClientsInfo struct {
 }
 
 type ChannelsInfo struct {
-	ChainA   *relayer.Chain
-	ChainB   *relayer.Chain
 	Channels []Channel
 }
 
 type Channel struct {
-	Source       string
-	Destination  string
-	StuckPackets struct {
+	Source          string
+	Destination     string
+	SourcePort      string
+	DestinationPort string
+	Ordering        string
+	StuckPackets    struct {
 		Source      int
 		Destination int
-		Total       int
 	}
 }
 
@@ -95,8 +95,19 @@ func GetChannelsInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (Channel
 	ctx := context.Background()
 	channelInfo := ChannelsInfo{}
 
+	// Init channel data
+	for _, c := range ibc.Channels {
+		var channel Channel
+		channel.Source = c.Chain1.ChannelID
+		channel.Destination = c.Chain2.ChannelID
+		channel.SourcePort = c.Chain1.PortID
+		channel.DestinationPort = c.Chain2.PortID
+		channel.Ordering = c.Ordering
+		channelInfo.Channels = append(channelInfo.Channels, channel)
+	}
+
 	if (*rpcs)[ibc.Chain1.ChainName].ChainID == "" || (*rpcs)[ibc.Chain2.ChainName].ChainID == "" {
-		return ChannelsInfo{}, fmt.Errorf(
+		return channelInfo, fmt.Errorf(
 			"Error: RPC data is missing, cannot retrieve channel data: %v",
 			ibc.Channels,
 		)
@@ -128,23 +139,11 @@ func GetChannelsInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (Channel
 	if _, _, err := relayer.QueryLatestHeights(
 		ctx, chainA, chainB,
 	); err != nil {
-		for _, c := range ibc.Channels {
-			var channel Channel
-			channel.Source = c.Chain1.ChannelID
-			channel.Destination = c.Chain2.ChannelID
-			channelInfo.Channels = append(channelInfo.Channels, channel)
-		}
-
 		return channelInfo, fmt.Errorf("Error: %w for %v", err, cdA)
 	}
 
-	for _, c := range ibc.Channels {
+	for i, c := range channelInfo.Channels {
 		var order chantypes.Order
-
-		var channel Channel
-
-		channel.Source = c.Chain1.ChannelID
-		channel.Destination = c.Chain2.ChannelID
 
 		switch c.Ordering {
 		case "none":
@@ -159,20 +158,17 @@ func GetChannelsInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (Channel
 			State:    stateOpen,
 			Ordering: order,
 			Counterparty: chantypes.Counterparty{
-				PortId:    c.Chain2.PortID,
-				ChannelId: c.Chain2.ChannelID,
+				PortId:    c.DestinationPort,
+				ChannelId: c.Destination,
 			},
-			PortId:    c.Chain1.PortID,
-			ChannelId: c.Chain2.ChannelID,
+			PortId:    c.SourcePort,
+			ChannelId: c.Source,
 		}
 
 		unrelayedSequences := relayer.UnrelayedSequences(ctx, chainA, chainB, &ch)
 
-		channel.StuckPackets.Total += len(unrelayedSequences.Src) + len(unrelayedSequences.Dst)
-		channel.StuckPackets.Source += len(unrelayedSequences.Src)
-		channel.StuckPackets.Destination += len(unrelayedSequences.Dst)
-
-		channelInfo.Channels = append(channelInfo.Channels, channel)
+		channelInfo.Channels[i].StuckPackets.Source += len(unrelayedSequences.Src)
+		channelInfo.Channels[i].StuckPackets.Destination += len(unrelayedSequences.Dst)
 	}
 
 	return channelInfo, nil

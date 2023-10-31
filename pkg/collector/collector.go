@@ -16,13 +16,11 @@ import (
 )
 
 const (
-	successStatus                    = "success"
-	errorStatus                      = "error"
-	clientExpiryMetricName           = "cosmos_ibc_client_expiry"
-	walletBalanceMetricName          = "cosmos_wallet_balance"
-	channelStuckPacketsMetricName    = "cosmos_ibc_stuck_packets_total"
-	channelSrcStuckPacketsMetricName = "cosmos_ibc_stuck_packets_src"
-	channelDstStuckPacketsMetricName = "cosmos_ibc_stuck_packets_dst"
+	successStatus                 = "success"
+	errorStatus                   = "error"
+	clientExpiryMetricName        = "cosmos_ibc_client_expiry"
+	walletBalanceMetricName       = "cosmos_wallet_balance"
+	channelStuckPacketsMetricName = "cosmos_ibc_stuck_packets"
 )
 
 var (
@@ -34,30 +32,6 @@ var (
 	channelStuckPackets = prometheus.NewDesc(
 		channelStuckPacketsMetricName,
 		"Returns stuck packets for a channel.",
-		[]string{
-			"src_channel_id",
-			"dst_channel_id",
-			"src_chain_id",
-			"dst_chain_id",
-			"status",
-		},
-		nil,
-	)
-	channelSrcStuckPackets = prometheus.NewDesc(
-		channelSrcStuckPacketsMetricName,
-		"Returns source stuck packets for a channel.",
-		[]string{
-			"src_channel_id",
-			"dst_channel_id",
-			"src_chain_id",
-			"dst_chain_id",
-			"status",
-		},
-		nil,
-	)
-	channelDstStuckPackets = prometheus.NewDesc(
-		channelDstStuckPacketsMetricName,
-		"Returns destination stuck packets for a channel.",
 		[]string{
 			"src_channel_id",
 			"dst_channel_id",
@@ -141,19 +115,6 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 					ch <- prometheus.MustNewConstMetric(
 						channelStuckPackets,
 						prometheus.GaugeValue,
-						float64(sp.StuckPackets.Total),
-						[]string{
-							sp.Source,
-							sp.Destination,
-							(*cc.RPCs)[path.Chain1.ChainName].ChainID,
-							(*cc.RPCs)[path.Chain2.ChainName].ChainID,
-							status,
-						}...,
-					)
-
-					ch <- prometheus.MustNewConstMetric(
-						channelSrcStuckPackets,
-						prometheus.GaugeValue,
 						float64(sp.StuckPackets.Source),
 						[]string{
 							sp.Source,
@@ -165,14 +126,14 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 					)
 
 					ch <- prometheus.MustNewConstMetric(
-						channelDstStuckPackets,
+						channelStuckPackets,
 						prometheus.GaugeValue,
 						float64(sp.StuckPackets.Destination),
 						[]string{
-							sp.Source,
 							sp.Destination,
-							(*cc.RPCs)[path.Chain1.ChainName].ChainID,
+							sp.Source,
 							(*cc.RPCs)[path.Chain2.ChainName].ChainID,
+							(*cc.RPCs)[path.Chain1.ChainName].ChainID,
 							status,
 						}...,
 					)
