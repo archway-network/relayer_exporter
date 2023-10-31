@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/archway-network/relayer_exporter/compare/v0.9.0...v0.10.0) (2023-10-31)
+
+
+### Features
+
+* new export for stuck packets ([#24](https://github.com/archway-network/relayer_exporter/issues/24)) ([2bba835](https://github.com/archway-network/relayer_exporter/commit/2bba8359f4488b86230b3c9194fd2cb6011e347e))
+
 ## [0.9.0](https://github.com/archway-network/relayer_exporter/compare/v0.8.0...v0.9.0) (2023-10-20)
 
 
