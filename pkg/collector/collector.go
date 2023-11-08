@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"strings"
 	"sync"
 
-	"github.com/cosmos/relayer/v2/relayer"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
@@ -27,7 +27,14 @@ var (
 	clientExpiry = prometheus.NewDesc(
 		clientExpiryMetricName,
 		"Returns light client expiry in unixtime.",
-		[]string{"host_chain_id", "client_id", "target_chain_id", "status"}, nil,
+		[]string{
+			"host_chain_id",
+			"client_id",
+			"target_chain_id",
+			"discord_ids",
+			"status",
+		},
+		nil,
 	)
 	channelStuckPackets = prometheus.NewDesc(
 		channelStuckPacketsMetricName,
@@ -37,6 +44,7 @@ var (
 			"dst_channel_id",
 			"src_chain_id",
 			"dst_chain_id",
+			"discord_ids",
 			"status",
 		},
 		nil,
@@ -50,7 +58,7 @@ var (
 
 type IBCCollector struct {
 	RPCs  *map[string]config.RPC
-	Paths []*relayer.IBCdata
+	Paths []*config.IBCData
 }
 
 type WalletBalanceCollector struct {
@@ -77,8 +85,10 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 	for _, p := range cc.Paths {
 		wg.Add(1)
 
-		go func(path *relayer.IBCdata) {
+		go func(path *config.IBCData) {
 			defer wg.Done()
+
+			discordIDs := getDiscordIDs(path.Operators)
 
 			// Client info
 			ci, err := ibc.GetClientsInfo(path, cc.RPCs)
@@ -94,14 +104,26 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 				clientExpiry,
 				prometheus.GaugeValue,
 				float64(ci.ChainAClientExpiration.Unix()),
-				[]string{(*cc.RPCs)[path.Chain1.ChainName].ChainID, path.Chain1.ClientID, (*cc.RPCs)[path.Chain2.ChainName].ChainID, status}...,
+				[]string{
+					(*cc.RPCs)[path.Chain1.ChainName].ChainID,
+					path.Chain1.ClientID,
+					(*cc.RPCs)[path.Chain2.ChainName].ChainID,
+					discordIDs,
+					status,
+				}...,
 			)
 
 			ch <- prometheus.MustNewConstMetric(
 				clientExpiry,
 				prometheus.GaugeValue,
 				float64(ci.ChainBClientExpiration.Unix()),
-				[]string{(*cc.RPCs)[path.Chain2.ChainName].ChainID, path.Chain2.ClientID, (*cc.RPCs)[path.Chain1.ChainName].ChainID, status}...,
+				[]string{
+					(*cc.RPCs)[path.Chain2.ChainName].ChainID,
+					path.Chain2.ClientID,
+					(*cc.RPCs)[path.Chain1.ChainName].ChainID,
+					discordIDs,
+					status,
+				}...,
 			)
 
 			// Stuck packets
@@ -125,6 +147,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 							sp.Destination,
 							(*cc.RPCs)[path.Chain1.ChainName].ChainID,
 							(*cc.RPCs)[path.Chain2.ChainName].ChainID,
+							discordIDs,
 							status,
 						}...,
 					)
@@ -138,6 +161,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 							sp.Source,
 							(*cc.RPCs)[path.Chain2.ChainName].ChainID,
 							(*cc.RPCs)[path.Chain1.ChainName].ChainID,
+							discordIDs,
 							status,
 						}...,
 					)
@@ -191,4 +215,13 @@ func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 
 	log.Debug("Stop collecting", zap.String("metric", walletBalanceMetricName))
+}
+
+func getDiscordIDs(ops []config.Operator) string {
+	var ids []string
+	for _, op := range ops {
+		ids = append(ids, op.Discord.ID)
+	}
+
+	return strings.Join(ids, ",")
 }

@@ -39,7 +39,7 @@ type Channel struct {
 	}
 }
 
-func GetClientsInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (ClientsInfo, error) {
+func GetClientsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsInfo, error) {
 	clientsInfo := ClientsInfo{}
 
 	cdA := chain.Info{
@@ -91,7 +91,7 @@ func GetClientsInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (ClientsI
 	return clientsInfo, nil
 }
 
-func GetChannelsInfo(ibc *relayer.IBCdata, rpcs *map[string]config.RPC) (ChannelsInfo, error) {
+func GetChannelsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ChannelsInfo, error) {
 	ctx := context.Background()
 	channelInfo := ChannelsInfo{}
 

@@ -9,7 +9,6 @@ import (
 
 	"cosmossdk.io/math"
 	"github.com/caarlos0/env/v9"
-	"github.com/cosmos/relayer/v2/relayer"
 	"github.com/google/go-github/v55/github"
 	"gopkg.in/yaml.v3"
 
@@ -46,6 +45,54 @@ type Config struct {
 	} `yaml:"github"`
 }
 
+type IBCData struct {
+	Schema string `json:"$schema"`
+	Chain1 struct {
+		ChainName    string `json:"chain_name"`
+		ClientID     string `json:"client_id"`
+		ConnectionID string `json:"connection_id"`
+	} `json:"chain_1"`
+	Chain2 struct {
+		ChainName    string `json:"chain_name"`
+		ClientID     string `json:"client_id"`
+		ConnectionID string `json:"connection_id"`
+	} `json:"chain_2"`
+	Channels []struct {
+		Chain1 struct {
+			ChannelID string `json:"channel_id"`
+			PortID    string `json:"port_id"`
+		} `json:"chain_1"`
+		Chain2 struct {
+			ChannelID string `json:"channel_id"`
+			PortID    string `json:"port_id"`
+		} `json:"chain_2"`
+		Ordering string `json:"ordering"`
+		Version  string `json:"version"`
+		Tags     struct {
+			Status     string `json:"status"`
+			Preferred  bool   `json:"preferred"`
+			Dex        string `json:"dex"`
+			Properties string `json:"properties"`
+		} `json:"tags,omitempty"`
+	} `json:"channels"`
+	Operators []Operator `json:"operators"`
+}
+
+type Operator struct {
+	Chain1 struct {
+		Address string `json:"address"`
+	} `json:"chain_1"`
+	Chain2 struct {
+		Address string `json:"address"`
+	} `json:"chain_2"`
+	Memo    string `json:"memo"`
+	Name    string `json:"name"`
+	Discord struct {
+		Handle string `json:"handle"`
+		ID     string `json:"id"`
+	} `json:"discord"`
+}
+
 func (a *Account) GetBalance(rpcs *map[string]RPC) error {
 	chain, err := chain.PrepChain(chain.Info{
 		ChainID: (*rpcs)[a.ChainName].ChainID,
@@ -77,7 +124,7 @@ func (c *Config) GetRPCsMap() *map[string]RPC {
 	return &rpcs
 }
 
-func (c *Config) IBCPaths() ([]*relayer.IBCdata, error) {
+func (c *Config) IBCPaths() ([]*IBCData, error) {
 	client := github.NewClient(nil)
 
 	if c.GitHub.Token != "" {
@@ -91,7 +138,7 @@ func (c *Config) IBCPaths() ([]*relayer.IBCdata, error) {
 		return nil, err
 	}
 
-	testnetsPaths := []*relayer.IBCdata{}
+	testnetsPaths := []*IBCData{}
 	if c.GitHub.TestnetsIBCDir != "" {
 		testnetsPaths, err = c.getPaths(c.GitHub.TestnetsIBCDir, client)
 		if err != nil {
@@ -104,7 +151,7 @@ func (c *Config) IBCPaths() ([]*relayer.IBCdata, error) {
 	return paths, nil
 }
 
-func (c *Config) getPaths(dir string, client *github.Client) ([]*relayer.IBCdata, error) {
+func (c *Config) getPaths(dir string, client *github.Client) ([]*IBCData, error) {
 	if client == nil {
 		return nil, ErrGitHubClient
 	}
@@ -116,16 +163,22 @@ func (c *Config) getPaths(dir string, client *github.Client) ([]*relayer.IBCdata
 		return nil, err
 	}
 
-	ibcs := []*relayer.IBCdata{}
+	ibcs := []*IBCData{}
 
 	for _, file := range ibcDir {
 		if strings.HasSuffix(*file.Path, ibcPathSuffix) {
-			content, _, _, err := client.Repositories.GetContents(ctx, c.GitHub.Org, c.GitHub.Repo, *file.Path, nil)
+			content, _, _, err := client.Repositories.GetContents(
+				ctx,
+				c.GitHub.Org,
+				c.GitHub.Repo,
+				*file.Path,
+				nil,
+			)
 			if err != nil {
 				return nil, err
 			}
 
-			ibc := &relayer.IBCdata{}
+			ibc := &IBCData{}
 
 			c, err := content.GetContent()
 			if err != nil {
