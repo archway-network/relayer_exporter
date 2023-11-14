@@ -85,12 +85,14 @@ type Operator struct {
 	Chain2 struct {
 		Address string `json:"address"`
 	} `json:"chain_2"`
-	Memo    string `json:"memo"`
-	Name    string `json:"name"`
-	Discord struct {
-		Handle string `json:"handle"`
-		ID     string `json:"id"`
-	} `json:"discord"`
+	Memo    string  `json:"memo"`
+	Name    string  `json:"name"`
+	Discord Discord `json:"discord"`
+}
+
+type Discord struct {
+	Handle string `json:"handle"`
+	ID     string `json:"id"`
 }
 
 func (a *Account) GetBalance(rpcs *map[string]RPC) error {

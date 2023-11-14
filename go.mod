@@ -5,6 +5,7 @@ go 1.21
 require (
 	cosmossdk.io/math v1.0.1
 	github.com/caarlos0/env/v9 v9.0.0
+	github.com/cosmos/ibc-go/v7 v7.2.0
 	github.com/cosmos/relayer/v2 v2.4.1
 	github.com/google/go-github/v55 v55.0.0
 	github.com/prometheus/client_golang v1.15.0
@@ -56,7 +57,6 @@ require (
 	github.com/cosmos/gogogateway v1.2.0 // indirect
 	github.com/cosmos/gogoproto v1.4.10 // indirect
 	github.com/cosmos/iavl v0.20.0 // indirect
-	github.com/cosmos/ibc-go/v7 v7.2.0 // indirect
 	github.com/cosmos/ics23/go v0.10.0 // indirect
 	github.com/cosmos/ledger-cosmos-go v0.12.2 // indirect
 	github.com/cosmos/rosetta-sdk-go v0.10.0 // indirect

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -220,7 +221,11 @@ func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
 func getDiscordIDs(ops []config.Operator) string {
 	var ids []string
 	for _, op := range ops {
-		ids = append(ids, op.Discord.ID)
+
+		pattern := regexp.MustCompile(`^\d+$`)
+		if pattern.MatchString(op.Discord.ID) {
+			ids = append(ids, op.Discord.ID)
+		}
 	}
 
 	return strings.Join(ids, ",")
