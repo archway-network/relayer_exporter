@@ -56,7 +56,9 @@ func TestDiscordIDs(t *testing.T) {
 		},
 	}
 	for _, tc := range testCases {
-		res := getDiscordIDs(tc.ops)
-		assert.Equal(t, tc.expected, res)
+		t.Run(tc.name, func(t *testing.T) {
+			res := getDiscordIDs(tc.ops)
+			assert.Equal(t, tc.expected, res)
+		})
 	}
 }
