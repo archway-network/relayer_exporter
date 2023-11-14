@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/archway-network/relayer_exporter/compare/v0.10.0...v0.11.0) (2023-11-14)
+
+
+### Features
+
+* add discord labels to metrics ([#26](https://github.com/archway-network/relayer_exporter/issues/26)) ([1442748](https://github.com/archway-network/relayer_exporter/commit/14427484b9bde6dcfcddcde8268622bf1fc6a443))
+
 ## [0.10.0](https://github.com/archway-network/relayer_exporter/compare/v0.9.0...v0.10.0) (2023-10-31)
 
 
