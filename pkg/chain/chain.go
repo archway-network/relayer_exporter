@@ -17,13 +17,20 @@ type Info struct {
 	ChainID  string
 	RPCAddr  string
 	ClientID string
+	Timeout  string
 }
 
 func PrepChain(info Info) (*relayer.Chain, error) {
 	logger := zap.NewNop()
+
+	timeout := rpcTimeout
+	if info.Timeout != "" {
+		timeout = info.Timeout
+	}
+
 	providerConfig := cosmos.CosmosProviderConfig{
 		ChainID:        info.ChainID,
-		Timeout:        rpcTimeout,
+		Timeout:        timeout,
 		KeyringBackend: keyringBackend,
 		RPCAddr:        info.RPCAddr,
 	}

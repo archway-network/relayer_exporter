@@ -31,12 +31,14 @@ type RPC struct {
 	ChainName string `yaml:"chainName"`
 	ChainID   string `yaml:"chainId"`
 	URL       string `yaml:"url"`
+	Timeout   string `yaml:"timeout"`
 }
 
 type Config struct {
-	Accounts []Account `yaml:"accounts"`
-	RPCs     []RPC     `yaml:"rpc"`
-	GitHub   struct {
+	Accounts         []Account `yaml:"accounts"`
+	GlobalRPCTimeout string    `env:"GLOBAL_RPC_TIMEOUT" envDefault:"5s"`
+	RPCs             []RPC     `yaml:"rpc"`
+	GitHub           struct {
 		Org            string `yaml:"org"`
 		Repo           string `yaml:"repo"`
 		IBCDir         string `yaml:"dir"`
@@ -99,6 +101,7 @@ func (a *Account) GetBalance(rpcs *map[string]RPC) error {
 	chain, err := chain.PrepChain(chain.Info{
 		ChainID: (*rpcs)[a.ChainName].ChainID,
 		RPCAddr: (*rpcs)[a.ChainName].URL,
+		Timeout: (*rpcs)[a.ChainName].Timeout,
 	})
 	if err != nil {
 		return err
@@ -120,6 +123,10 @@ func (c *Config) GetRPCsMap() *map[string]RPC {
 	rpcs := map[string]RPC{}
 
 	for _, rpc := range c.RPCs {
+		if rpc.Timeout == "" {
+			rpc.Timeout = c.GlobalRPCTimeout
+		}
+
 		rpcs[rpc.ChainName] = rpc
 	}
 

@@ -45,6 +45,7 @@ func GetClientsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsIn
 	cdA := chain.Info{
 		ChainID:  (*rpcs)[ibc.Chain1.ChainName].ChainID,
 		RPCAddr:  (*rpcs)[ibc.Chain1.ChainName].URL,
+		Timeout:  (*rpcs)[ibc.Chain1.ChainName].Timeout,
 		ClientID: ibc.Chain1.ClientID,
 	}
 
@@ -58,6 +59,7 @@ func GetClientsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsIn
 	cdB := chain.Info{
 		ChainID:  (*rpcs)[ibc.Chain2.ChainName].ChainID,
 		RPCAddr:  (*rpcs)[ibc.Chain2.ChainName].URL,
+		Timeout:  (*rpcs)[ibc.Chain2.ChainName].Timeout,
 		ClientID: ibc.Chain2.ClientID,
 	}
 
@@ -116,6 +118,7 @@ func GetChannelsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (Channels
 	cdA := chain.Info{
 		ChainID:  (*rpcs)[ibc.Chain1.ChainName].ChainID,
 		RPCAddr:  (*rpcs)[ibc.Chain1.ChainName].URL,
+		Timeout:  (*rpcs)[ibc.Chain1.ChainName].Timeout,
 		ClientID: ibc.Chain1.ClientID,
 	}
 
@@ -127,6 +130,7 @@ func GetChannelsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (Channels
 	cdB := chain.Info{
 		ChainID:  (*rpcs)[ibc.Chain2.ChainName].ChainID,
 		RPCAddr:  (*rpcs)[ibc.Chain2.ChainName].URL,
+		Timeout:  (*rpcs)[ibc.Chain2.ChainName].Timeout,
 		ClientID: ibc.Chain2.ClientID,
 	}
 

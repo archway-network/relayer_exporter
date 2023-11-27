@@ -18,21 +18,27 @@ func TestGetRPCsMap(t *testing.T) {
 			ChainName: "archwaytestnet",
 			ChainID:   "constantine-3",
 			URL:       "https://rpc.constantine.archway.tech:443",
+			Timeout:   "2s",
 		},
 	}
 
-	cfg := Config{RPCs: rpcs}
+	cfg := Config{
+		GlobalRPCTimeout: "5s",
+		RPCs:             rpcs,
+	}
 
 	exp := map[string]RPC{
 		"archway": {
 			ChainName: "archway",
 			ChainID:   "archway-1",
 			URL:       "https://rpc.mainnet.archway.io:443",
+			Timeout:   "5s",
 		},
 		"archwaytestnet": {
 			ChainName: "archwaytestnet",
 			ChainID:   "constantine-3",
 			URL:       "https://rpc.constantine.archway.tech:443",
+			Timeout:   "2s",
 		},
 	}
 
