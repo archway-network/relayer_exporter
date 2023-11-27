@@ -17,6 +17,7 @@ rpc:
   - chainName: archwaytestnet
     chainId: constantine-3
     url: https://rpc.constantine.archway.tech:443
+    timeout: 2s
 
 github:
   org: archway-network
@@ -33,6 +34,9 @@ accounts:
 During startup it fetches IBC paths from github based on provided config.
 If env var GITHUB_TOKEN is provided it will be used to make authenticated requests to GitHub API.
 Using provided RPC endpoints it gets clients expiration dates for fetched paths.
+Each RCP endpoint can have different timeout specified.
+If env var GLOBAL_RPC_TIMEOUT (default 5s) is provided it specifies timeout for endpoints
+without explicit timeout defined.
 
 For provided accounts it fetches wallet balances using endpoints defined in rpc list.
 
