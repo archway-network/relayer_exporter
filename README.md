@@ -35,8 +35,8 @@ During startup it fetches IBC paths from github based on provided config.
 If env var GITHUB_TOKEN is provided it will be used to make authenticated requests to GitHub API.
 Using provided RPC endpoints it gets clients expiration dates for fetched paths.
 Each RCP endpoint can have a different timeout specified.
-If env var GLOBAL_RPC_TIMEOUT (default 5s) is provided it specifies timeout for endpoints
-without explicit timeout defined.
+If env var GLOBAL_RPC_TIMEOUT (default 5s) is provided, it specifies the timeout for endpoints
+without having it defined.
 
 For provided accounts it fetches wallet balances using endpoints defined in rpc list.
 
