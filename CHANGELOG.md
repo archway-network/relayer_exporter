@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.0](https://github.com/archway-network/relayer_exporter/compare/v0.11.0...v0.12.0) (2023-11-27)
+
+
+### Features
+
+* Add configurable timeout to rpc endpoints ([#28](https://github.com/archway-network/relayer_exporter/issues/28)) ([1bf89eb](https://github.com/archway-network/relayer_exporter/commit/1bf89eb0309d41d23cc355448f77144d876ec34d))
+* Add labels with chain names for cosmos_ibc_stuck_packets metric ([#30](https://github.com/archway-network/relayer_exporter/issues/30)) ([367fdac](https://github.com/archway-network/relayer_exporter/commit/367fdac3f8c0111181be67d6e68324f6dd923464))
+
 ## [0.11.0](https://github.com/archway-network/relayer_exporter/compare/v0.10.0...v0.11.0) (2023-11-14)
 
 
