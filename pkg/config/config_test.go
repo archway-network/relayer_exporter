@@ -93,7 +93,7 @@ func TestGetRPC(t *testing.T) {
 				RPCs:             tc.rpcs,
 			}
 			res, err := cfg.GetRPCsMap(tc.paths)
-			assert.ErrorIs(t, err, tc.err)
+			assert.Equal(t, err, tc.err)
 			assert.Equal(t, &tc.resp, res)
 		})
 	}
