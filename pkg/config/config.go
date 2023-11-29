@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -19,6 +20,7 @@ import (
 const ibcPathSuffix = ".json"
 
 var ErrGitHubClient = errors.New("GitHub client not provided")
+var ErrMissingRPCConfigMsg = "missing RPC config for chain: %s"
 
 type Account struct {
 	Address   string `yaml:"address"`
@@ -47,37 +49,29 @@ type Config struct {
 	} `yaml:"github"`
 }
 
-type IBCData struct {
-	Schema string `json:"$schema"`
+type IBCChainMeta struct {
+	ChainName    string `json:"chain_name"`
+	ClientID     string `json:"client_id"`
+	ConnectionID string `json:"connection_id"`
+}
+
+type Channel struct {
 	Chain1 struct {
-		ChainName    string `json:"chain_name"`
-		ClientID     string `json:"client_id"`
-		ConnectionID string `json:"connection_id"`
+		ChannelID string `json:"channel_id"`
+		PortID    string `json:"port_id"`
 	} `json:"chain_1"`
 	Chain2 struct {
-		ChainName    string `json:"chain_name"`
-		ClientID     string `json:"client_id"`
-		ConnectionID string `json:"connection_id"`
+		ChannelID string `json:"channel_id"`
+		PortID    string `json:"port_id"`
 	} `json:"chain_2"`
-	Channels []struct {
-		Chain1 struct {
-			ChannelID string `json:"channel_id"`
-			PortID    string `json:"port_id"`
-		} `json:"chain_1"`
-		Chain2 struct {
-			ChannelID string `json:"channel_id"`
-			PortID    string `json:"port_id"`
-		} `json:"chain_2"`
-		Ordering string `json:"ordering"`
-		Version  string `json:"version"`
-		Tags     struct {
-			Status     string `json:"status"`
-			Preferred  bool   `json:"preferred"`
-			Dex        string `json:"dex"`
-			Properties string `json:"properties"`
-		} `json:"tags,omitempty"`
-	} `json:"channels"`
-	Operators []Operator `json:"operators"`
+	Ordering string `json:"ordering"`
+	Version  string `json:"version"`
+	Tags     struct {
+		Status     string `json:"status"`
+		Preferred  bool   `json:"preferred"`
+		Dex        string `json:"dex"`
+		Properties string `json:"properties"`
+	} `json:"tags,omitempty"`
 }
 
 type Operator struct {
@@ -90,6 +84,14 @@ type Operator struct {
 	Memo    string  `json:"memo"`
 	Name    string  `json:"name"`
 	Discord Discord `json:"discord"`
+}
+
+type IBCData struct {
+	Schema    string       `json:"$schema"`
+	Chain1    IBCChainMeta `json:"chain_1"`
+	Chain2    IBCChainMeta `json:"chain_2"`
+	Channels  []Channel    `json:"channels"`
+	Operators []Operator   `json:"operators"`
 }
 
 type Discord struct {
@@ -119,7 +121,11 @@ func (a *Account) GetBalance(rpcs *map[string]RPC) error {
 	return nil
 }
 
-func (c *Config) GetRPCsMap() *map[string]RPC {
+// GetRPCsMap uses the provided config file to return a map of chain
+// chain_names to RPCs. It uses IBCData already extracted from
+// github IBC registry to validate config for missing RPCs and raises
+// an error if any are missing.
+func (c *Config) GetRPCsMap(ibcPaths []*IBCData) (*map[string]RPC, error) {
 	rpcs := map[string]RPC{}
 
 	for _, rpc := range c.RPCs {
@@ -130,7 +136,20 @@ func (c *Config) GetRPCsMap() *map[string]RPC {
 		rpcs[rpc.ChainName] = rpc
 	}
 
-	return &rpcs
+	// Validate RPCs exist for each IBC path
+	for _, ibcPath := range ibcPaths {
+		// Check RPC for chain 1
+		if _, ok := rpcs[ibcPath.Chain1.ChainName]; !ok {
+			return &rpcs, fmt.Errorf("missing RPC config for chain: %s", ibcPath.Chain1.ChainName)
+		}
+
+		// Check RPC for chain 2
+		if _, ok := rpcs[ibcPath.Chain2.ChainName]; !ok {
+			return &rpcs, fmt.Errorf(ErrMissingRPCConfigMsg, ibcPath.Chain2.ChainName)
+		}
+	}
+
+	return &rpcs, nil
 }
 
 func (c *Config) IBCPaths() ([]*IBCData, error) {
@@ -176,6 +195,7 @@ func (c *Config) getPaths(dir string, client *github.Client) ([]*IBCData, error)
 
 	for _, file := range ibcDir {
 		if strings.HasSuffix(*file.Path, ibcPathSuffix) {
+			log.Debug(fmt.Sprintf("Fetching IBC data for %s/%s/%s", c.GitHub.Org, c.GitHub.Repo, *file.Path))
 			content, _, _, err := client.Repositories.GetContents(
 				ctx,
 				c.GitHub.Org,

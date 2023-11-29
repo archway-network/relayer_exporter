@@ -1,26 +1,28 @@
----
+github:
+  org: archway-network
+  repo: networks
+  dir: _IBC
+  testnetsDir: testnets/_IBC
 rpc:
+  # mainnets
   - chainName: archway
     chainId: archway-1
     url: https://rpc.mainnet.archway.io:443
   - chainName: agoric
     chainId: agoric-3
-    url: https://main.rpc.agoric.net:443
+    url: https://agoric.rpc.kjnodes.com:443
   - chainName: axelar
     chainId: axelar-dojo-1
-    url: https://axelar-rpc.polkachu.com:443
-  - chainName: axelartestnet
-    chainId: axelar-testnet-lisbon-3
-    url: https://rpc-axelar-testnet.imperator.co:443
-  - chainName: archwaytestnet
-    chainId: constantine-3
-    url: https://rpc.constantine.archway.tech:443
+    url: https://rpc-1.axelar.nodes.guru:443
   - chainName: bitcanna
     chainId: bitcanna-1
     url: https://rpc.bitcanna.io:443
   - chainName: cosmoshub
     chainId: cosmoshub-4
     url: https://cosmoshub-rpc.stakely.io:443
+  - chainName: decentr
+    chainId: mainnet-3
+    url: https://poseidon.mainnet.decentr.xyz:443
   - chainName: jackal
     chainId: jackal-1
     url: https://jackal-rpc.polkachu.com:443
@@ -29,45 +31,61 @@ rpc:
     url: https://juno-rpc.publicnode.com:443
   - chainName: kujira
     chainId: kaiyo-1
-    url: https://kujira-rpc.polkachu.com:443
+    url: https://kujira-rpc.publicnode.com:443
   - chainName: noble
     chainId: noble-1
     url: https://noble-rpc.polkachu.com:443
   - chainName: nois
     chainId: nois-1
     url: https://nois.rpc.kjnodes.com:443
-  - chainName: osmosistestnet
-    chainId: osmo-test-5
-    url: https://rpc.osmotest5.osmosis.zone:443
+  - chainName: omniflixhub
+    chainId: omniflixhub-1
+    url: https://omniflix.kingnodes.com:443
   - chainName: osmosis
     chainId: osmosis-1
     url: https://osmosis-rpc.stakely.io:443
   - chainName: quicksilver
     chainId: quicksilver-2
     url: https://rpc.quicksilver.zone:443
-  - chainName: akashtestnet
-    chainId: sandbox-01
-    url: https://rpc.sandbox-01.aksh.pw:443
   - chainName: umee
     chainId: umee-1
     url: https://rpc-umee.mzonder.com:443
   - chainName: gravitybridge
     chainId: gravity-bridge-3
     url: https://gravitychain.io:26657
-  - chainName: omniflixhub
-    chainId: omniflixhub-1
-    url: https://rpc-omniflix.mzonder.com:443
-  - chainName: decentr
-    chainId: mainnet-3
-    url: https://poseidon.mainnet.decentr.xyz:443
+  - chainName: secretnetwork
+    chainId: secret-4
+    url: https://rpc.secret.express:443
+  - chainName: terra2
+    chainId: phoenix-1
+    url: https://terra-rpc.stakely.io:443
+  - chainName: comdex
+    chainId: comdex-1
+    url: https://rpc.comdex.one:443
+  - chainName: neutron
+    chainId: neutron-1
+    url: https://rpc-kralum.neutron-1.neutron.org:443
+  - chainName: stargaze
+    chainId: stargaze-1
+    url: https://rpc.stargaze-apis.com:443
 
-github:
-  org: archway-network
-  repo: networks
-  dir: _IBC
-  testnetsDir: testnets/_IBC
+  # testnets
+  - chainName: archwaytestnet
+    chainId: constantine-3
+    url: https://rpc.constantine.archway.tech:443
+  - chainName: axelartestnet
+    chainId: axelar-testnet-lisbon-3
+    url: https://axelar-testnet-rpc.qubelabs.io:443
+  - chainName: osmosistestnet
+    chainId: osmo-test-5
+    url: https://rpc.osmotest5.osmosis.zone:443
 
 accounts:
-  - address: archway1l2al7y78500h5akvgt8exwnkpmf2zmk8ky9ht3
-    chainName: archwaytestnet
-    denom: aconst
+  # Foundation
+  - address: archway1gpyqzc0aerc85cpk2cm8ec6zkc95x5yqrakskv
+    chainName: archway
+    denom: aarch
+  # PhiLabs
+  - address: archway1ktka5q3cnsy3ar7qwj2huzz6qj9q4ys7h74l9y
+    chainName: archway
+    denom: aarch

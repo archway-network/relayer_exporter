@@ -72,6 +72,7 @@ func GetClientsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsIn
 
 	ctx := context.Background()
 
+	fmt.Sprintf("Querying client expiration for %v <-> %v", cdA, cdB)
 	clientsInfo.ChainAClientExpiration, clientsInfo.ChainAClientInfo, err = relayer.QueryClientExpiration(
 		ctx,
 		chainA,

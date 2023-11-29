@@ -8,6 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
 
 	"github.com/archway-network/relayer_exporter/pkg/collector"
 	"github.com/archway-network/relayer_exporter/pkg/config"
@@ -45,11 +46,12 @@ func main() {
 
 	log.Info(
 		fmt.Sprintf(
-			"Getting IBC paths from %s/%s/%s on GitHub",
+			"Github IBC registry: %s/%s",
 			cfg.GitHub.Org,
 			cfg.GitHub.Repo,
-			cfg.GitHub.IBCDir,
 		),
+		zap.String("Mainnet Directory", cfg.GitHub.IBCDir),
+		zap.String("Testnet Directory", cfg.GitHub.TestnetsIBCDir),
 	)
 
 	// TODO: Add a feature to refresh paths at configured interval
@@ -58,7 +60,10 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	rpcs := cfg.GetRPCsMap()
+	rpcs, err := cfg.GetRPCsMap(paths)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
 	ibcCollector := collector.IBCCollector{
 		RPCs:  rpcs,
