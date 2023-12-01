@@ -99,7 +99,7 @@ type Discord struct {
 	ID     string `json:"id"`
 }
 
-func (a *Account) GetBalance(rpcs *map[string]RPC) error {
+func (a *Account) GetBalance(ctx context.Context, rpcs *map[string]RPC) error {
 	chain, err := chain.PrepChain(chain.Info{
 		ChainID: (*rpcs)[a.ChainName].ChainID,
 		RPCAddr: (*rpcs)[a.ChainName].URL,
@@ -108,8 +108,6 @@ func (a *Account) GetBalance(rpcs *map[string]RPC) error {
 	if err != nil {
 		return err
 	}
-
-	ctx := context.Background()
 
 	coins, err := chain.ChainProvider.QueryBalanceWithAddress(ctx, a.Address)
 	if err != nil {
@@ -152,7 +150,7 @@ func (c *Config) GetRPCsMap(ibcPaths []*IBCData) (*map[string]RPC, error) {
 	return &rpcs, nil
 }
 
-func (c *Config) IBCPaths() ([]*IBCData, error) {
+func (c *Config) IBCPaths(ctx context.Context) ([]*IBCData, error) {
 	client := github.NewClient(nil)
 
 	if c.GitHub.Token != "" {
@@ -161,14 +159,14 @@ func (c *Config) IBCPaths() ([]*IBCData, error) {
 		client = github.NewClient(nil).WithAuthToken(c.GitHub.Token)
 	}
 
-	paths, err := c.getPaths(c.GitHub.IBCDir, client)
+	paths, err := c.getPaths(ctx, c.GitHub.IBCDir, client)
 	if err != nil {
 		return nil, err
 	}
 
 	testnetsPaths := []*IBCData{}
 	if c.GitHub.TestnetsIBCDir != "" {
-		testnetsPaths, err = c.getPaths(c.GitHub.TestnetsIBCDir, client)
+		testnetsPaths, err = c.getPaths(ctx, c.GitHub.TestnetsIBCDir, client)
 		if err != nil {
 			return nil, err
 		}
@@ -179,12 +177,10 @@ func (c *Config) IBCPaths() ([]*IBCData, error) {
 	return paths, nil
 }
 
-func (c *Config) getPaths(dir string, client *github.Client) ([]*IBCData, error) {
+func (c *Config) getPaths(ctx context.Context, dir string, client *github.Client) ([]*IBCData, error) {
 	if client == nil {
 		return nil, ErrGitHubClient
 	}
-
-	ctx := context.Background()
 
 	_, ibcDir, _, err := client.Repositories.GetContents(ctx, c.GitHub.Org, c.GitHub.Repo, dir, nil)
 	if err != nil {

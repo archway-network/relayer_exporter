@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"sync"
@@ -66,7 +67,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 			fmt.Sprintf("%s, %s", clientExpiryMetricName, channelStuckPacketsMetricName),
 		),
 	)
-
+	ctx := context.Background()
 	var wg sync.WaitGroup
 
 	for _, p := range cc.Paths {
@@ -78,7 +79,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 			discordIDs := getDiscordIDs(path.Operators)
 
 			// Client info
-			ci, err := ibc.GetClientsInfo(path, cc.RPCs)
+			ci, err := ibc.GetClientsInfo(ctx, path, cc.RPCs)
 			status := successStatus
 
 			if err != nil {
@@ -116,7 +117,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 			// Stuck packets
 			status = successStatus
 
-			stuckPackets, err := ibc.GetChannelsInfo(path, cc.RPCs)
+			stuckPackets, err := ibc.GetChannelsInfo(ctx, path, cc.RPCs)
 			if err != nil {
 				status = errorStatus
 

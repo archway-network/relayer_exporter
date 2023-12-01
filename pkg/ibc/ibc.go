@@ -39,7 +39,7 @@ type Channel struct {
 	}
 }
 
-func GetClientsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsInfo, error) {
+func GetClientsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsInfo, error) {
 	clientsInfo := ClientsInfo{}
 
 	cdA := chain.Info{
@@ -51,7 +51,7 @@ func GetClientsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsIn
 
 	chainA, err := chain.PrepChain(cdA)
 	if err != nil {
-		return ClientsInfo{}, fmt.Errorf("Error: %w for %v", err, cdA)
+		return ClientsInfo{}, fmt.Errorf("%w for %v", err, cdA)
 	}
 
 	clientsInfo.ChainA = chainA
@@ -65,14 +65,11 @@ func GetClientsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsIn
 
 	chainB, err := chain.PrepChain(cdB)
 	if err != nil {
-		return ClientsInfo{}, fmt.Errorf("Error: %w for %v", err, cdB)
+		return ClientsInfo{}, fmt.Errorf("%w for %v", err, cdB)
 	}
 
 	clientsInfo.ChainB = chainB
 
-	ctx := context.Background()
-
-	fmt.Sprintf("Querying client expiration for %v <-> %v", cdA, cdB)
 	clientsInfo.ChainAClientExpiration, clientsInfo.ChainAClientInfo, err = relayer.QueryClientExpiration(
 		ctx,
 		chainA,
@@ -94,8 +91,7 @@ func GetClientsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsIn
 	return clientsInfo, nil
 }
 
-func GetChannelsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ChannelsInfo, error) {
-	ctx := context.Background()
+func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]config.RPC) (ChannelsInfo, error) {
 	channelInfo := ChannelsInfo{}
 
 	// Init channel data

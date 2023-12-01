@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"testing"
@@ -101,10 +102,11 @@ func TestGetRPC(t *testing.T) {
 
 func TestGetPaths(t *testing.T) {
 	cfg := Config{}
+	ctx := context.Background()
 
 	expError := ErrGitHubClient
 
-	_, err := cfg.getPaths("_IBC", nil)
+	_, err := cfg.getPaths(ctx, "_IBC", nil)
 	if err == nil {
 		t.Fatalf("Expected error %q, got no error", expError)
 	}

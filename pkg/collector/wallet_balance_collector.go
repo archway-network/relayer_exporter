@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"math/big"
 	"sync"
 
@@ -34,8 +35,8 @@ func (wb WalletBalanceCollector) Describe(ch chan<- *prometheus.Desc) {
 
 func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
 	log.Debug("Start collecting", zap.String("metric", walletBalanceMetricName))
-
 	var wg sync.WaitGroup
+	ctx := context.Background()
 
 	for _, a := range wb.Accounts {
 		wg.Add(1)
@@ -46,7 +47,7 @@ func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
 			balance := 0.0
 			status := successStatus
 
-			err := account.GetBalance(wb.RPCs)
+			err := account.GetBalance(ctx, wb.RPCs)
 			if err != nil {
 				status = errorStatus
 

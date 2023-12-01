@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
@@ -54,8 +55,9 @@ func main() {
 		zap.String("Testnet Directory", cfg.GitHub.TestnetsIBCDir),
 	)
 
+	ctx := context.Background()
 	// TODO: Add a feature to refresh paths at configured interval
-	paths, err := cfg.IBCPaths()
+	paths, err := cfg.IBCPaths(ctx)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
