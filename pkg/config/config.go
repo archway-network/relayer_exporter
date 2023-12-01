@@ -100,7 +100,7 @@ type Discord struct {
 }
 
 func (a *Account) GetBalance(ctx context.Context, rpcs *map[string]RPC) error {
-	chain, err := chain.PrepChain(chain.Info{
+	chain, err := chain.PrepChain(ctx, chain.Info{
 		ChainID: (*rpcs)[a.ChainName].ChainID,
 		RPCAddr: (*rpcs)[a.ChainName].URL,
 		Timeout: (*rpcs)[a.ChainName].Timeout,

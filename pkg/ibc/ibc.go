@@ -49,7 +49,7 @@ func GetClientsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]c
 		ClientID: ibc.Chain1.ClientID,
 	}
 
-	chainA, err := chain.PrepChain(cdA)
+	chainA, err := chain.PrepChain(ctx, cdA)
 	if err != nil {
 		return ClientsInfo{}, fmt.Errorf("%w for %v", err, cdA)
 	}
@@ -63,7 +63,7 @@ func GetClientsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]c
 		ClientID: ibc.Chain2.ClientID,
 	}
 
-	chainB, err := chain.PrepChain(cdB)
+	chainB, err := chain.PrepChain(ctx, cdB)
 	if err != nil {
 		return ClientsInfo{}, fmt.Errorf("%w for %v", err, cdB)
 	}
@@ -119,7 +119,7 @@ func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]
 		ClientID: ibc.Chain1.ClientID,
 	}
 
-	chainA, err := chain.PrepChain(cdA)
+	chainA, err := chain.PrepChain(ctx, cdA)
 	if err != nil {
 		return ChannelsInfo{}, fmt.Errorf("Error: %w for %v", err, cdA)
 	}
@@ -131,7 +131,7 @@ func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]
 		ClientID: ibc.Chain2.ClientID,
 	}
 
-	chainB, err := chain.PrepChain(cdB)
+	chainB, err := chain.PrepChain(ctx, cdB)
 	if err != nil {
 		return ChannelsInfo{}, fmt.Errorf("Error: %w for %v", err, cdB)
 	}

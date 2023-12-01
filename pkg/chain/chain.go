@@ -21,7 +21,7 @@ type Info struct {
 	Timeout  string
 }
 
-func PrepChain(info Info) (*relayer.Chain, error) {
+func PrepChain(ctx context.Context, info Info) (*relayer.Chain, error) {
 	timeout := rpcTimeout
 	if info.Timeout != "" {
 		timeout = info.Timeout
@@ -39,7 +39,7 @@ func PrepChain(info Info) (*relayer.Chain, error) {
 		return nil, err
 	}
 
-	err = provider.Init(context.Background())
+	err = provider.Init(ctx)
 	if err != nil {
 		return nil, err
 	}
