@@ -76,7 +76,7 @@ func GetClientsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]c
 		chainB,
 	)
 	if err != nil {
-		return ClientsInfo{}, fmt.Errorf("Error: %w path %v <-> %v", err, cdA, cdB)
+		return ClientsInfo{}, fmt.Errorf("%w path %v <-> %v", err, cdA, cdB)
 	}
 
 	clientsInfo.ChainBClientExpiration, clientsInfo.ChainBClientInfo, err = relayer.QueryClientExpiration(
@@ -85,7 +85,7 @@ func GetClientsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]c
 		chainA,
 	)
 	if err != nil {
-		return ClientsInfo{}, fmt.Errorf("Error: %w path %v <-> %v", err, cdB, cdA)
+		return ClientsInfo{}, fmt.Errorf("%w path %v <-> %v", err, cdB, cdA)
 	}
 
 	return clientsInfo, nil
@@ -105,6 +105,8 @@ func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]
 		channelInfo.Channels = append(channelInfo.Channels, channel)
 	}
 
+	fmt.Printf("Type: %T Value %v\n", (*rpcs)[ibc.Chain2.ChainName], (*rpcs)[ibc.Chain2.ChainName])
+	fmt.Printf("Type: %T Value %v\n", (*rpcs)[ibc.Chain2.ChainName], (*rpcs)[ibc.Chain2.ChainName])
 	if (*rpcs)[ibc.Chain1.ChainName].ChainID == "" || (*rpcs)[ibc.Chain2.ChainName].ChainID == "" {
 		return channelInfo, fmt.Errorf(
 			"Error: RPC data is missing, cannot retrieve channel data: %v",

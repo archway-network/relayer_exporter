@@ -6,10 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"cosmossdk.io/math"
 	"github.com/caarlos0/env/v9"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/go-github/v55/github"
 	"gopkg.in/yaml.v3"
 
@@ -30,23 +32,23 @@ type Account struct {
 }
 
 type RPC struct {
-	ChainName string `yaml:"chainName"`
-	ChainID   string `yaml:"chainId"`
-	URL       string `yaml:"url"`
+	ChainName string `yaml:"chainName" validate:"required"`
+	ChainID   string `yaml:"chainId" validate:"required"`
+	URL       string `yaml:"url" validate:"required,http_url,has_port"`
 	Timeout   string `yaml:"timeout"`
 }
 
 type Config struct {
 	Accounts         []Account `yaml:"accounts"`
 	GlobalRPCTimeout string    `env:"GLOBAL_RPC_TIMEOUT" envDefault:"5s"`
-	RPCs             []RPC     `yaml:"rpc"`
+	RPCs             []RPC     `yaml:"rpc" validate`
 	GitHub           struct {
-		Org            string `yaml:"org"`
-		Repo           string `yaml:"repo"`
-		IBCDir         string `yaml:"dir"`
+		Org            string `yaml:"org" validate:"required"`
+		Repo           string `yaml:"repo" validate:"required"`
+		IBCDir         string `yaml:"dir" validate:"required"`
 		TestnetsIBCDir string `yaml:"testnetsDir"`
 		Token          string `env:"GITHUB_TOKEN"`
-	} `yaml:"github"`
+	} `yaml:"github" validate:"required"`
 }
 
 type IBCChainMeta struct {
@@ -221,6 +223,42 @@ func (c *Config) getPaths(ctx context.Context, dir string, client *github.Client
 	return ibcs, nil
 }
 
+func (c *Config) Validate() error {
+	validate := validator.New(validator.WithRequiredStructEnabled())
+
+	// register custom validation for http url as expected by go relayer i.e.
+	// http_url must have port defined.
+	// https://github.com/cosmos/relayer/blob/259b1278264180a2aefc2085f1b55753849c4815/cregistry/chain_info.go#L115
+	validate.RegisterValidation("has_port", func(fl validator.FieldLevel) bool {
+		val := fl.Field().String()
+		val_arr := strings.Split(val, ":")
+		port := val_arr[len(val_arr)-1]
+
+		// Port must be a iny <= 65535.
+		if portNum, err := strconv.ParseInt(
+			port, 10, 32,
+		); err != nil || portNum > 65535 || portNum < 1 {
+			return false
+		}
+		return true
+	})
+
+	// validate top level fields
+	if err := validate.Struct(c); err != nil {
+		return err
+
+	}
+
+	// validate RPCs
+	for _, rpc := range c.RPCs {
+		if err := validate.Struct(rpc); err != nil {
+			return fmt.Errorf("%v for RPC config: %+v", err, rpc)
+		}
+	}
+
+	return nil
+}
+
 func NewConfig(configPath string) (*Config, error) {
 	config := &Config{}
 
@@ -236,6 +274,11 @@ func NewConfig(configPath string) (*Config, error) {
 	}
 
 	if err := env.Parse(config); err != nil {
+		return nil, err
+	}
+
+	err = config.Validate()
+	if err != nil {
 		return nil, err
 	}
 
