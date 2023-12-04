@@ -25,9 +25,9 @@ var ErrGitHubClient = errors.New("GitHub client not provided")
 var ErrMissingRPCConfigMsg = "missing RPC config for chain: %s"
 
 type Account struct {
-	Address   string `yaml:"address"`
-	Denom     string `yaml:"denom"`
-	ChainName string `yaml:"chainName"`
+	Address   string `yaml:"address" validate:"required"`
+	Denom     string `yaml:"denom" validate:"required"`
+	ChainName string `yaml:"chainName" validate:"required"`
 	Balance   math.Int
 }
 
@@ -41,7 +41,7 @@ type RPC struct {
 type Config struct {
 	Accounts         []Account `yaml:"accounts"`
 	GlobalRPCTimeout string    `env:"GLOBAL_RPC_TIMEOUT" envDefault:"5s"`
-	RPCs             []RPC     `yaml:"rpc" validate`
+	RPCs             []RPC     `yaml:"rpc"`
 	GitHub           struct {
 		Org            string `yaml:"org" validate:"required"`
 		Repo           string `yaml:"repo" validate:"required"`
@@ -253,6 +253,13 @@ func (c *Config) Validate() error {
 	for _, rpc := range c.RPCs {
 		if err := validate.Struct(rpc); err != nil {
 			return fmt.Errorf("%v for RPC config: %+v", err, rpc)
+		}
+	}
+
+	// validate accounts
+	for _, account := range c.Accounts {
+		if err := validate.Struct(account); err != nil {
+			return fmt.Errorf("%v for accounts config: %+v", err, account)
 		}
 	}
 
