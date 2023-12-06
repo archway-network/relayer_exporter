@@ -2,7 +2,6 @@ package chain
 
 import (
 	"context"
-	"fmt"
 
 	log "github.com/archway-network/relayer_exporter/pkg/logger"
 	"github.com/cosmos/relayer/v2/relayer"
@@ -52,20 +51,4 @@ func PrepChain(ctx context.Context, info Info) (*relayer.Chain, error) {
 	}
 
 	return chain, nil
-}
-
-func ValidateChainInfo(info Info) error {
-	if info.ChainID == "" {
-		return fmt.Errorf("missing chain ID: %v", info)
-	}
-
-	if info.RPCAddr == "" {
-		return fmt.Errorf("missing RPC address: %v", info)
-	}
-
-	if info.ClientID == "" {
-		return fmt.Errorf("missing client ID: %v", info)
-	}
-
-	return nil
 }
