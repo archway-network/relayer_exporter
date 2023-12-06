@@ -1,7 +1,6 @@
 package collector
 
 import (
-	"context"
 	"fmt"
 	"reflect"
 	"sync"
@@ -67,7 +66,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 			fmt.Sprintf("%s, %s", clientExpiryMetricName, channelStuckPacketsMetricName),
 		),
 	)
-	ctx := context.Background()
+
 	var wg sync.WaitGroup
 
 	for _, p := range cc.Paths {

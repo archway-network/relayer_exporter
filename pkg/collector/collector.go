@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"regexp"
 	"strings"
 
@@ -11,6 +12,8 @@ const (
 	successStatus = "success"
 	errorStatus   = "error"
 )
+
+var ctx = context.Background()
 
 func getDiscordIDs(ops []config.Operator) string {
 	var ids []string

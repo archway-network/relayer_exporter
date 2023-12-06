@@ -21,8 +21,10 @@ import (
 
 const ibcPathSuffix = ".json"
 
-var ErrGitHubClient = errors.New("GitHub client not provided")
-var ErrMissingRPCConfigMsg = "missing RPC config for chain: %s"
+var (
+	ErrGitHubClient        = errors.New("GitHub client not provided")
+	ErrMissingRPCConfigMsg = "missing RPC config for chain: %s"
+)
 
 type Account struct {
 	Address   string `yaml:"address" validate:"required"`
@@ -229,10 +231,10 @@ func (c *Config) Validate() error {
 	// register custom validation for http url as expected by go relayer i.e.
 	// http_url must have port defined.
 	// https://github.com/cosmos/relayer/blob/259b1278264180a2aefc2085f1b55753849c4815/cregistry/chain_info.go#L115
-	validate.RegisterValidation("has_port", func(fl validator.FieldLevel) bool {
+	err := validate.RegisterValidation("has_port", func(fl validator.FieldLevel) bool {
 		val := fl.Field().String()
-		val_arr := strings.Split(val, ":")
-		port := val_arr[len(val_arr)-1]
+		valArr := strings.Split(val, ":")
+		port := valArr[len(valArr)-1]
 
 		// Port must be a iny <= 65535.
 		if portNum, err := strconv.ParseInt(
@@ -242,11 +244,13 @@ func (c *Config) Validate() error {
 		}
 		return true
 	})
+	if err != nil {
+		return err
+	}
 
 	// validate top level fields
 	if err := validate.Struct(c); err != nil {
 		return err
-
 	}
 
 	// validate RPCs

@@ -1,7 +1,6 @@
 package collector
 
 import (
-	"context"
 	"math/big"
 	"sync"
 
@@ -16,12 +15,10 @@ const (
 	walletBalanceMetricName = "cosmos_wallet_balance"
 )
 
-var (
-	walletBalance = prometheus.NewDesc(
-		walletBalanceMetricName,
-		"Returns wallet balance for an address on a chain.",
-		[]string{"account", "chain_id", "denom", "status"}, nil,
-	)
+var walletBalance = prometheus.NewDesc(
+	walletBalanceMetricName,
+	"Returns wallet balance for an address on a chain.",
+	[]string{"account", "chain_id", "denom", "status"}, nil,
 )
 
 type WalletBalanceCollector struct {
@@ -35,8 +32,8 @@ func (wb WalletBalanceCollector) Describe(ch chan<- *prometheus.Desc) {
 
 func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
 	log.Debug("Start collecting", zap.String("metric", walletBalanceMetricName))
+
 	var wg sync.WaitGroup
-	ctx := context.Background()
 
 	for _, a := range wb.Accounts {
 		wg.Add(1)
