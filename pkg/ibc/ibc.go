@@ -105,15 +105,6 @@ func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]
 		channelInfo.Channels = append(channelInfo.Channels, channel)
 	}
 
-	fmt.Printf("Type: %T Value %v\n", (*rpcs)[ibc.Chain2.ChainName], (*rpcs)[ibc.Chain2.ChainName])
-	fmt.Printf("Type: %T Value %v\n", (*rpcs)[ibc.Chain2.ChainName], (*rpcs)[ibc.Chain2.ChainName])
-	if (*rpcs)[ibc.Chain1.ChainName].ChainID == "" || (*rpcs)[ibc.Chain2.ChainName].ChainID == "" {
-		return channelInfo, fmt.Errorf(
-			"Error: RPC data is missing, cannot retrieve channel data: %v",
-			ibc.Channels,
-		)
-	}
-
 	cdA := chain.Info{
 		ChainID:  (*rpcs)[ibc.Chain1.ChainName].ChainID,
 		RPCAddr:  (*rpcs)[ibc.Chain1.ChainName].URL,
@@ -123,7 +114,7 @@ func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]
 
 	chainA, err := chain.PrepChain(ctx, cdA)
 	if err != nil {
-		return ChannelsInfo{}, fmt.Errorf("Error: %w for %v", err, cdA)
+		return ChannelsInfo{}, fmt.Errorf("error: %w for %+v", err, cdA)
 	}
 
 	cdB := chain.Info{
@@ -135,14 +126,14 @@ func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]
 
 	chainB, err := chain.PrepChain(ctx, cdB)
 	if err != nil {
-		return ChannelsInfo{}, fmt.Errorf("Error: %w for %v", err, cdB)
+		return ChannelsInfo{}, fmt.Errorf("error: %w for %+v", err, cdB)
 	}
 
 	// test that RPC endpoints are working
 	if _, _, err := relayer.QueryLatestHeights(
 		ctx, chainA, chainB,
 	); err != nil {
-		return channelInfo, fmt.Errorf("Error: %w for %v", err, cdA)
+		return channelInfo, fmt.Errorf("error: %w for %v", err, cdA)
 	}
 
 	for i, c := range channelInfo.Channels {
