@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -142,7 +143,7 @@ func (c *Config) GetRPCsMap(ibcPaths []*IBCData) (*map[string]RPC, error) {
 	for _, ibcPath := range ibcPaths {
 		// Check RPC for chain 1
 		if _, ok := rpcs[ibcPath.Chain1.ChainName]; !ok {
-			return &rpcs, fmt.Errorf("missing RPC config for chain: %s", ibcPath.Chain1.ChainName)
+			return &rpcs, fmt.Errorf(ErrMissingRPCConfigMsg, ibcPath.Chain1.ChainName)
 		}
 
 		// Check RPC for chain 2
@@ -233,8 +234,12 @@ func (c *Config) Validate() error {
 	// https://github.com/cosmos/relayer/blob/259b1278264180a2aefc2085f1b55753849c4815/cregistry/chain_info.go#L115
 	err := validate.RegisterValidation("has_port", func(fl validator.FieldLevel) bool {
 		val := fl.Field().String()
-		valArr := strings.Split(val, ":")
-		port := valArr[len(valArr)-1]
+		urlParsed, err := url.Parse(val)
+		if err != nil {
+			return false
+		}
+
+		port := urlParsed.Port()
 
 		// Port must be a iny <= 65535.
 		if portNum, err := strconv.ParseInt(
@@ -244,6 +249,7 @@ func (c *Config) Validate() error {
 		}
 		return true
 	})
+
 	if err != nil {
 		return err
 	}
