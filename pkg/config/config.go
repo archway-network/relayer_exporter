@@ -249,7 +249,6 @@ func (c *Config) Validate() error {
 		}
 		return true
 	})
-
 	if err != nil {
 		return err
 	}
