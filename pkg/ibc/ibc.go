@@ -39,7 +39,7 @@ type Channel struct {
 	}
 }
 
-func GetClientsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsInfo, error) {
+func GetClientsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsInfo, error) {
 	clientsInfo := ClientsInfo{}
 
 	cdA := chain.Info{
@@ -49,9 +49,9 @@ func GetClientsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsIn
 		ClientID: ibc.Chain1.ClientID,
 	}
 
-	chainA, err := chain.PrepChain(cdA)
+	chainA, err := chain.PrepChain(ctx, cdA)
 	if err != nil {
-		return ClientsInfo{}, fmt.Errorf("Error: %w for %v", err, cdA)
+		return ClientsInfo{}, fmt.Errorf("%w for %v", err, cdA)
 	}
 
 	clientsInfo.ChainA = chainA
@@ -63,14 +63,12 @@ func GetClientsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsIn
 		ClientID: ibc.Chain2.ClientID,
 	}
 
-	chainB, err := chain.PrepChain(cdB)
+	chainB, err := chain.PrepChain(ctx, cdB)
 	if err != nil {
-		return ClientsInfo{}, fmt.Errorf("Error: %w for %v", err, cdB)
+		return ClientsInfo{}, fmt.Errorf("%w for %v", err, cdB)
 	}
 
 	clientsInfo.ChainB = chainB
-
-	ctx := context.Background()
 
 	clientsInfo.ChainAClientExpiration, clientsInfo.ChainAClientInfo, err = relayer.QueryClientExpiration(
 		ctx,
@@ -78,7 +76,7 @@ func GetClientsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsIn
 		chainB,
 	)
 	if err != nil {
-		return ClientsInfo{}, fmt.Errorf("Error: %w path %v <-> %v", err, cdA, cdB)
+		return ClientsInfo{}, fmt.Errorf("%w path %v <-> %v", err, cdA, cdB)
 	}
 
 	clientsInfo.ChainBClientExpiration, clientsInfo.ChainBClientInfo, err = relayer.QueryClientExpiration(
@@ -87,14 +85,13 @@ func GetClientsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsIn
 		chainA,
 	)
 	if err != nil {
-		return ClientsInfo{}, fmt.Errorf("Error: %w path %v <-> %v", err, cdB, cdA)
+		return ClientsInfo{}, fmt.Errorf("%w path %v <-> %v", err, cdB, cdA)
 	}
 
 	return clientsInfo, nil
 }
 
-func GetChannelsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (ChannelsInfo, error) {
-	ctx := context.Background()
+func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]config.RPC) (ChannelsInfo, error) {
 	channelInfo := ChannelsInfo{}
 
 	// Init channel data
@@ -108,13 +105,6 @@ func GetChannelsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (Channels
 		channelInfo.Channels = append(channelInfo.Channels, channel)
 	}
 
-	if (*rpcs)[ibc.Chain1.ChainName].ChainID == "" || (*rpcs)[ibc.Chain2.ChainName].ChainID == "" {
-		return channelInfo, fmt.Errorf(
-			"Error: RPC data is missing, cannot retrieve channel data: %v",
-			ibc.Channels,
-		)
-	}
-
 	cdA := chain.Info{
 		ChainID:  (*rpcs)[ibc.Chain1.ChainName].ChainID,
 		RPCAddr:  (*rpcs)[ibc.Chain1.ChainName].URL,
@@ -122,9 +112,9 @@ func GetChannelsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (Channels
 		ClientID: ibc.Chain1.ClientID,
 	}
 
-	chainA, err := chain.PrepChain(cdA)
+	chainA, err := chain.PrepChain(ctx, cdA)
 	if err != nil {
-		return ChannelsInfo{}, fmt.Errorf("Error: %w for %v", err, cdA)
+		return ChannelsInfo{}, fmt.Errorf("error: %w for %+v", err, cdA)
 	}
 
 	cdB := chain.Info{
@@ -134,16 +124,16 @@ func GetChannelsInfo(ibc *config.IBCData, rpcs *map[string]config.RPC) (Channels
 		ClientID: ibc.Chain2.ClientID,
 	}
 
-	chainB, err := chain.PrepChain(cdB)
+	chainB, err := chain.PrepChain(ctx, cdB)
 	if err != nil {
-		return ChannelsInfo{}, fmt.Errorf("Error: %w for %v", err, cdB)
+		return ChannelsInfo{}, fmt.Errorf("error: %w for %+v", err, cdB)
 	}
 
 	// test that RPC endpoints are working
 	if _, _, err := relayer.QueryLatestHeights(
 		ctx, chainA, chainB,
 	); err != nil {
-		return channelInfo, fmt.Errorf("Error: %w for %v", err, cdA)
+		return channelInfo, fmt.Errorf("error: %w for %v", err, cdA)
 	}
 
 	for i, c := range channelInfo.Channels {

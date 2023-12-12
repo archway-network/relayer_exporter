@@ -3,9 +3,9 @@ package chain
 import (
 	"context"
 
+	log "github.com/archway-network/relayer_exporter/pkg/logger"
 	"github.com/cosmos/relayer/v2/relayer"
 	"github.com/cosmos/relayer/v2/relayer/chains/cosmos"
-	"go.uber.org/zap"
 )
 
 const (
@@ -20,9 +20,7 @@ type Info struct {
 	Timeout  string
 }
 
-func PrepChain(info Info) (*relayer.Chain, error) {
-	logger := zap.NewNop()
-
+func PrepChain(ctx context.Context, info Info) (*relayer.Chain, error) {
 	timeout := rpcTimeout
 	if info.Timeout != "" {
 		timeout = info.Timeout
@@ -40,12 +38,12 @@ func PrepChain(info Info) (*relayer.Chain, error) {
 		return nil, err
 	}
 
-	err = provider.Init(context.Background())
+	err = provider.Init(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	chain := relayer.NewChain(logger, provider, false)
+	chain := relayer.NewChain(log.GetLogger(), provider, false)
 
 	err = chain.SetPath(&relayer.PathEnd{ClientID: info.ClientID})
 	if err != nil {

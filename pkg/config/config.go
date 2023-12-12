@@ -4,11 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"cosmossdk.io/math"
 	"github.com/caarlos0/env/v9"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/go-github/v55/github"
 	"gopkg.in/yaml.v3"
 
@@ -18,19 +22,22 @@ import (
 
 const ibcPathSuffix = ".json"
 
-var ErrGitHubClient = errors.New("GitHub client not provided")
+var (
+	ErrGitHubClient        = errors.New("GitHub client not provided")
+	ErrMissingRPCConfigMsg = "missing RPC config for chain: %s"
+)
 
 type Account struct {
-	Address   string `yaml:"address"`
-	Denom     string `yaml:"denom"`
-	ChainName string `yaml:"chainName"`
+	Address   string `yaml:"address" validate:"required"`
+	Denom     string `yaml:"denom" validate:"required"`
+	ChainName string `yaml:"chainName" validate:"required"`
 	Balance   math.Int
 }
 
 type RPC struct {
-	ChainName string `yaml:"chainName"`
-	ChainID   string `yaml:"chainId"`
-	URL       string `yaml:"url"`
+	ChainName string `yaml:"chainName" validate:"required"`
+	ChainID   string `yaml:"chainId" validate:"required"`
+	URL       string `yaml:"url" validate:"required,http_url,has_port"`
 	Timeout   string `yaml:"timeout"`
 }
 
@@ -39,45 +46,37 @@ type Config struct {
 	GlobalRPCTimeout string    `env:"GLOBAL_RPC_TIMEOUT" envDefault:"5s"`
 	RPCs             []RPC     `yaml:"rpc"`
 	GitHub           struct {
-		Org            string `yaml:"org"`
-		Repo           string `yaml:"repo"`
-		IBCDir         string `yaml:"dir"`
+		Org            string `yaml:"org" validate:"required"`
+		Repo           string `yaml:"repo" validate:"required"`
+		IBCDir         string `yaml:"dir" validate:"required"`
 		TestnetsIBCDir string `yaml:"testnetsDir"`
 		Token          string `env:"GITHUB_TOKEN"`
-	} `yaml:"github"`
+	} `yaml:"github" validate:"required"`
 }
 
-type IBCData struct {
-	Schema string `json:"$schema"`
+type IBCChainMeta struct {
+	ChainName    string `json:"chain_name"`
+	ClientID     string `json:"client_id"`
+	ConnectionID string `json:"connection_id"`
+}
+
+type Channel struct {
 	Chain1 struct {
-		ChainName    string `json:"chain_name"`
-		ClientID     string `json:"client_id"`
-		ConnectionID string `json:"connection_id"`
+		ChannelID string `json:"channel_id"`
+		PortID    string `json:"port_id"`
 	} `json:"chain_1"`
 	Chain2 struct {
-		ChainName    string `json:"chain_name"`
-		ClientID     string `json:"client_id"`
-		ConnectionID string `json:"connection_id"`
+		ChannelID string `json:"channel_id"`
+		PortID    string `json:"port_id"`
 	} `json:"chain_2"`
-	Channels []struct {
-		Chain1 struct {
-			ChannelID string `json:"channel_id"`
-			PortID    string `json:"port_id"`
-		} `json:"chain_1"`
-		Chain2 struct {
-			ChannelID string `json:"channel_id"`
-			PortID    string `json:"port_id"`
-		} `json:"chain_2"`
-		Ordering string `json:"ordering"`
-		Version  string `json:"version"`
-		Tags     struct {
-			Status     string `json:"status"`
-			Preferred  bool   `json:"preferred"`
-			Dex        string `json:"dex"`
-			Properties string `json:"properties"`
-		} `json:"tags,omitempty"`
-	} `json:"channels"`
-	Operators []Operator `json:"operators"`
+	Ordering string `json:"ordering"`
+	Version  string `json:"version"`
+	Tags     struct {
+		Status     string `json:"status"`
+		Preferred  bool   `json:"preferred"`
+		Dex        string `json:"dex"`
+		Properties string `json:"properties"`
+	} `json:"tags,omitempty"`
 }
 
 type Operator struct {
@@ -92,13 +91,21 @@ type Operator struct {
 	Discord Discord `json:"discord"`
 }
 
+type IBCData struct {
+	Schema    string       `json:"$schema"`
+	Chain1    IBCChainMeta `json:"chain_1"`
+	Chain2    IBCChainMeta `json:"chain_2"`
+	Channels  []Channel    `json:"channels"`
+	Operators []Operator   `json:"operators"`
+}
+
 type Discord struct {
 	Handle string `json:"handle"`
 	ID     string `json:"id"`
 }
 
-func (a *Account) GetBalance(rpcs *map[string]RPC) error {
-	chain, err := chain.PrepChain(chain.Info{
+func (a *Account) GetBalance(ctx context.Context, rpcs *map[string]RPC) error {
+	chain, err := chain.PrepChain(ctx, chain.Info{
 		ChainID: (*rpcs)[a.ChainName].ChainID,
 		RPCAddr: (*rpcs)[a.ChainName].URL,
 		Timeout: (*rpcs)[a.ChainName].Timeout,
@@ -106,8 +113,6 @@ func (a *Account) GetBalance(rpcs *map[string]RPC) error {
 	if err != nil {
 		return err
 	}
-
-	ctx := context.Background()
 
 	coins, err := chain.ChainProvider.QueryBalanceWithAddress(ctx, a.Address)
 	if err != nil {
@@ -119,7 +124,11 @@ func (a *Account) GetBalance(rpcs *map[string]RPC) error {
 	return nil
 }
 
-func (c *Config) GetRPCsMap() *map[string]RPC {
+// GetRPCsMap uses the provided config file to return a map of chain
+// chain_names to RPCs. It uses IBCData already extracted from
+// github IBC registry to validate config for missing RPCs and raises
+// an error if any are missing.
+func (c *Config) GetRPCsMap(ibcPaths []*IBCData) (*map[string]RPC, error) {
 	rpcs := map[string]RPC{}
 
 	for _, rpc := range c.RPCs {
@@ -130,10 +139,23 @@ func (c *Config) GetRPCsMap() *map[string]RPC {
 		rpcs[rpc.ChainName] = rpc
 	}
 
-	return &rpcs
+	// Validate RPCs exist for each IBC path
+	for _, ibcPath := range ibcPaths {
+		// Check RPC for chain 1
+		if _, ok := rpcs[ibcPath.Chain1.ChainName]; !ok {
+			return &rpcs, fmt.Errorf(ErrMissingRPCConfigMsg, ibcPath.Chain1.ChainName)
+		}
+
+		// Check RPC for chain 2
+		if _, ok := rpcs[ibcPath.Chain2.ChainName]; !ok {
+			return &rpcs, fmt.Errorf(ErrMissingRPCConfigMsg, ibcPath.Chain2.ChainName)
+		}
+	}
+
+	return &rpcs, nil
 }
 
-func (c *Config) IBCPaths() ([]*IBCData, error) {
+func (c *Config) IBCPaths(ctx context.Context) ([]*IBCData, error) {
 	client := github.NewClient(nil)
 
 	if c.GitHub.Token != "" {
@@ -142,14 +164,14 @@ func (c *Config) IBCPaths() ([]*IBCData, error) {
 		client = github.NewClient(nil).WithAuthToken(c.GitHub.Token)
 	}
 
-	paths, err := c.getPaths(c.GitHub.IBCDir, client)
+	paths, err := c.getPaths(ctx, c.GitHub.IBCDir, client)
 	if err != nil {
 		return nil, err
 	}
 
 	testnetsPaths := []*IBCData{}
 	if c.GitHub.TestnetsIBCDir != "" {
-		testnetsPaths, err = c.getPaths(c.GitHub.TestnetsIBCDir, client)
+		testnetsPaths, err = c.getPaths(ctx, c.GitHub.TestnetsIBCDir, client)
 		if err != nil {
 			return nil, err
 		}
@@ -160,12 +182,10 @@ func (c *Config) IBCPaths() ([]*IBCData, error) {
 	return paths, nil
 }
 
-func (c *Config) getPaths(dir string, client *github.Client) ([]*IBCData, error) {
+func (c *Config) getPaths(ctx context.Context, dir string, client *github.Client) ([]*IBCData, error) {
 	if client == nil {
 		return nil, ErrGitHubClient
 	}
-
-	ctx := context.Background()
 
 	_, ibcDir, _, err := client.Repositories.GetContents(ctx, c.GitHub.Org, c.GitHub.Repo, dir, nil)
 	if err != nil {
@@ -176,6 +196,7 @@ func (c *Config) getPaths(dir string, client *github.Client) ([]*IBCData, error)
 
 	for _, file := range ibcDir {
 		if strings.HasSuffix(*file.Path, ibcPathSuffix) {
+			log.Debug(fmt.Sprintf("Fetching IBC data for %s/%s/%s", c.GitHub.Org, c.GitHub.Repo, *file.Path))
 			content, _, _, err := client.Repositories.GetContents(
 				ctx,
 				c.GitHub.Org,
@@ -205,6 +226,55 @@ func (c *Config) getPaths(dir string, client *github.Client) ([]*IBCData, error)
 	return ibcs, nil
 }
 
+func (c *Config) Validate() error {
+	validate := validator.New(validator.WithRequiredStructEnabled())
+
+	// register custom validation for http url as expected by go relayer i.e.
+	// http_url must have port defined.
+	// https://github.com/cosmos/relayer/blob/259b1278264180a2aefc2085f1b55753849c4815/cregistry/chain_info.go#L115
+	err := validate.RegisterValidation("has_port", func(fl validator.FieldLevel) bool {
+		val := fl.Field().String()
+		urlParsed, err := url.Parse(val)
+		if err != nil {
+			return false
+		}
+
+		port := urlParsed.Port()
+
+		// Port must be a iny <= 65535.
+		if portNum, err := strconv.ParseInt(
+			port, 10, 32,
+		); err != nil || portNum > 65535 || portNum < 1 {
+			return false
+		}
+		return true
+	})
+	if err != nil {
+		return err
+	}
+
+	// validate top level fields
+	if err := validate.Struct(c); err != nil {
+		return err
+	}
+
+	// validate RPCs
+	for _, rpc := range c.RPCs {
+		if err := validate.Struct(rpc); err != nil {
+			return fmt.Errorf("%v for RPC config: %+v", err, rpc)
+		}
+	}
+
+	// validate accounts
+	for _, account := range c.Accounts {
+		if err := validate.Struct(account); err != nil {
+			return fmt.Errorf("%v for accounts config: %+v", err, account)
+		}
+	}
+
+	return nil
+}
+
 func NewConfig(configPath string) (*Config, error) {
 	config := &Config{}
 
@@ -220,6 +290,11 @@ func NewConfig(configPath string) (*Config, error) {
 	}
 
 	if err := env.Parse(config); err != nil {
+		return nil, err
+	}
+
+	err = config.Validate()
+	if err != nil {
 		return nil, err
 	}
 

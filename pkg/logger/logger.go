@@ -30,6 +30,10 @@ func init() {
 	logger.Level()
 }
 
+func GetLogger() *zap.Logger {
+	return logger
+}
+
 func Info(message string, fields ...zap.Field) {
 	logger.Info(message, fields...)
 }
