@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v4"
-	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	chantypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/cosmos/relayer/v2/relayer"
 	"go.uber.org/zap"
@@ -24,9 +23,6 @@ var (
 	RtyAtt    = retry.Attempts(RtyAttNum)
 	RtyDel    = retry.Delay(time.Millisecond * 400)
 	RtyErr    = retry.LastErrorOnly(true)
-
-	defaultCoinType uint32 = 118
-	defaultAlgo     string = string(hd.Secp256k1Type)
 )
 
 type ClientsInfo struct {
