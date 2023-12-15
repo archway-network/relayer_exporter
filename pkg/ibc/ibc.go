@@ -144,13 +144,6 @@ func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]
 		return ChannelsInfo{}, fmt.Errorf("error: %w for %+v", err, cdB)
 	}
 
-	// test that RPC endpoints are working
-	if _, _, err := relayer.QueryLatestHeights(
-		ctx, chainA, chainB,
-	); err != nil {
-		return channelInfo, fmt.Errorf("error: %w for %v", err, cdA)
-	}
-
 	for i, c := range channelInfo.Channels {
 		var order chantypes.Order
 
@@ -174,7 +167,11 @@ func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]
 			ChannelId: c.Source,
 		}
 
-		unrelayedSequences := UnrelayedSequences(ctx, chainA, chainB, &ch)
+		unrelayedSequences, err := UnrelayedSequences(ctx, chainA, chainB, &ch)
+
+		if err != nil {
+			return ChannelsInfo{}, err
+		}
 
 		channelInfo.Channels[i].StuckPackets.Source += len(unrelayedSequences.Src)
 		channelInfo.Channels[i].StuckPackets.Destination += len(unrelayedSequences.Dst)
@@ -184,7 +181,7 @@ func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]
 }
 
 // UnrelayedSequences returns the unrelayed sequence numbers between two chains
-func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel *chantypes.IdentifiedChannel) relayer.RelaySequences {
+func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel *chantypes.IdentifiedChannel) (relayer.RelaySequences, error) {
 	var (
 		srcPacketSeq = []uint64{}
 		dstPacketSeq = []uint64{}
@@ -193,8 +190,7 @@ func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel
 
 	srch, dsth, err := relayer.QueryLatestHeights(ctx, src, dst)
 	if err != nil {
-		log.Error("Error querying latest heights", zap.Error(err))
-		return rs
+		return rs, err
 	}
 
 	var wg sync.WaitGroup
@@ -354,7 +350,7 @@ func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel
 	if srcChannel.Ordering != chantypes.ORDERED {
 		rs.Src = srcUnreceivedPackets
 		rs.Dst = dstUnreceivedPackets
-		return rs
+		return rs, nil
 	}
 
 	// For ordered channels we want to only relay the packet whose sequence number is equal to
@@ -408,5 +404,5 @@ func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel
 	}
 	wg.Wait()
 
-	return rs
+	return rs, nil
 }
