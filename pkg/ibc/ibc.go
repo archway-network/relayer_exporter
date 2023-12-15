@@ -54,10 +54,11 @@ type Channel struct {
 	}
 }
 
-type RelaySequences struct {
-	Src    []uint64 `json:"src"`
-	Dst    []uint64 `json:"dst"`
-	height int64    `json:"height"`
+type UnRelaySequences struct {
+	Src       []uint64 `json:"src"`
+	Dst       []uint64 `json:"dst"`
+	SrcHeight int64    `json:"height"`
+	DstHeight int64    `json:"height"`
 }
 
 func GetClientsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsInfo, error) {
@@ -187,17 +188,20 @@ func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]
 }
 
 // UnrelayedSequences returns the unrelayed sequence numbers between two chains
-func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel *chantypes.IdentifiedChannel) (RelaySequences, error) {
+func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel *chantypes.IdentifiedChannel) (UnRelaySequences, error) {
 	var (
 		srcPacketSeq = []uint64{}
 		dstPacketSeq = []uint64{}
-		rs           = RelaySequences{Src: []uint64{}, Dst: []uint64{}, height: 0}
+		urs          = UnRelaySequences{Src: []uint64{}, Dst: []uint64{}, SrcHeight: 0, DstHeight: 0}
 	)
 
 	srch, dsth, err := relayer.QueryLatestHeights(ctx, src, dst)
 	if err != nil {
-		return rs, err
+		return urs, err
 	}
+
+	urs.SrcHeight = srch
+	urs.DstHeight = dsth
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -354,9 +358,9 @@ func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel
 
 	// If this is an UNORDERED channel we can return at this point.
 	if srcChannel.Ordering != chantypes.ORDERED {
-		rs.Src = srcUnreceivedPackets
-		rs.Dst = dstUnreceivedPackets
-		return rs, nil
+		urs.Src = srcUnreceivedPackets
+		urs.Dst = dstUnreceivedPackets
+		return urs, nil
 	}
 
 	// For ordered channels we want to only relay the packet whose sequence number is equal to
@@ -378,7 +382,7 @@ func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel
 
 			for _, seq := range srcUnreceivedPackets {
 				if seq == nextSeqResp.NextSequenceReceive {
-					rs.Src = append(rs.Src, seq)
+					urs.Src = append(urs.Src, seq)
 					break
 				}
 			}
@@ -402,7 +406,7 @@ func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel
 
 			for _, seq := range dstUnreceivedPackets {
 				if seq == nextSeqResp.NextSequenceReceive {
-					rs.Dst = append(rs.Dst, seq)
+					urs.Dst = append(urs.Dst, seq)
 					break
 				}
 			}
@@ -410,5 +414,5 @@ func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel
 	}
 	wg.Wait()
 
-	return rs, nil
+	return urs, nil
 }
