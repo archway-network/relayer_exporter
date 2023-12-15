@@ -54,6 +54,12 @@ type Channel struct {
 	}
 }
 
+type RelaySequences struct {
+	Src    []uint64 `json:"src"`
+	Dst    []uint64 `json:"dst"`
+	height int64    `json:"height"`
+}
+
 func GetClientsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsInfo, error) {
 	clientsInfo := ClientsInfo{}
 
@@ -181,11 +187,11 @@ func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]
 }
 
 // UnrelayedSequences returns the unrelayed sequence numbers between two chains
-func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel *chantypes.IdentifiedChannel) (relayer.RelaySequences, error) {
+func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel *chantypes.IdentifiedChannel) (RelaySequences, error) {
 	var (
 		srcPacketSeq = []uint64{}
 		dstPacketSeq = []uint64{}
-		rs           = relayer.RelaySequences{Src: []uint64{}, Dst: []uint64{}}
+		rs           = RelaySequences{Src: []uint64{}, Dst: []uint64{}, height: 0}
 	)
 
 	srch, dsth, err := relayer.QueryLatestHeights(ctx, src, dst)
