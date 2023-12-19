@@ -15,8 +15,9 @@ import (
 )
 
 const (
-	clientExpiryMetricName        = "cosmos_ibc_client_expiry"
-	channelStuckPacketsMetricName = "cosmos_ibc_stuck_packets"
+	clientExpiryMetricName            = "cosmos_ibc_client_expiry"
+	channelStuckPacketsMetricName     = "cosmos_ibc_stuck_packets"
+	channelNewAckSinceStuckMetricName = "cosmos_ibc_new_ack_since_stuck"
 )
 
 var (
@@ -34,7 +35,7 @@ var (
 	)
 	channelStuckPackets = prometheus.NewDesc(
 		channelStuckPacketsMetricName,
-		"Returns stuck packets for a channel.",
+		"Returns number of stuck packets for a channel.",
 		[]string{
 			"src_channel_id",
 			"dst_channel_id",
@@ -42,6 +43,22 @@ var (
 			"dst_chain_id",
 			"src_chain_height",
 			"dst_chain_height",
+			"src_chain_name",
+			"dst_chain_name",
+			"discord_ids",
+			"status",
+		},
+		nil,
+	)
+	channelNewAckSinceStuck = prometheus.NewDesc(
+		channelNewAckSinceStuckMetricName,
+		"Returns 1 if new IBC ack was observed since last stuck packet detection, else returns 0.",
+		[]string{
+			"src_channel_id",
+			"dst_channel_id",
+			"src_chain_id",
+			"dst_chain_id",
+			"src_chain_height",
 			"src_chain_name",
 			"dst_chain_name",
 			"discord_ids",
@@ -59,6 +76,7 @@ type IBCCollector struct {
 func (cc IBCCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- clientExpiry
 	ch <- channelStuckPackets
+	ch <- channelNewAckSinceStuck
 }
 
 func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
@@ -119,26 +137,26 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 			// Stuck packets
 			status = successStatus
 
-			stuckPackets, err := ibc.GetChannelsInfo(ctx, path, cc.RPCs)
+			channelsInfo, err := ibc.GetChannelsInfo(ctx, path, cc.RPCs)
 			if err != nil {
 				status = errorStatus
 
 				log.Error(err.Error())
 			}
 
-			if !reflect.DeepEqual(stuckPackets, ibc.ChannelsInfo{}) {
-				for _, sp := range stuckPackets.Channels {
+			if !reflect.DeepEqual(channelsInfo, ibc.ChannelsInfo{}) {
+				for _, chInfo := range channelsInfo.Channels {
 					ch <- prometheus.MustNewConstMetric(
 						channelStuckPackets,
 						prometheus.GaugeValue,
-						float64(len(sp.StuckPackets.Src)),
+						float64(len(chInfo.StuckPackets.Src)),
 						[]string{
-							sp.Source,
-							sp.Destination,
+							chInfo.Source,
+							chInfo.Destination,
 							(*cc.RPCs)[path.Chain1.ChainName].ChainID,
 							(*cc.RPCs)[path.Chain2.ChainName].ChainID,
-							strconv.FormatInt(sp.StuckPackets.SrcHeight, 10),
-							strconv.FormatInt(sp.StuckPackets.DstHeight, 10),
+							strconv.FormatInt(chInfo.StuckPackets.SrcHeight, 10),
+							strconv.FormatInt(chInfo.StuckPackets.DstHeight, 10),
 							path.Chain1.ChainName,
 							path.Chain2.ChainName,
 							discordIDs,
@@ -149,14 +167,14 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 					ch <- prometheus.MustNewConstMetric(
 						channelStuckPackets,
 						prometheus.GaugeValue,
-						float64(len(sp.StuckPackets.Dst)),
+						float64(len(chInfo.StuckPackets.Dst)),
 						[]string{
-							sp.Destination,
-							sp.Source,
+							chInfo.Destination,
+							chInfo.Source,
 							(*cc.RPCs)[path.Chain2.ChainName].ChainID,
 							(*cc.RPCs)[path.Chain1.ChainName].ChainID,
-							strconv.FormatInt(sp.StuckPackets.SrcHeight, 10),
-							strconv.FormatInt(sp.StuckPackets.DstHeight, 10),
+							strconv.FormatInt(chInfo.StuckPackets.SrcHeight, 10),
+							strconv.FormatInt(chInfo.StuckPackets.DstHeight, 10),
 							path.Chain2.ChainName,
 							path.Chain1.ChainName,
 							discordIDs,
@@ -171,4 +189,8 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 
 	log.Debug("Stop collecting", zap.String("metric", clientExpiryMetricName))
+}
+
+func (cc IBCCollector) MaybeStartNewAckPocessor(ch chan<- prometheus.Metric, path *config.IBCData, channelsInfo *ibc.ChannelsInfo, rpcs *map[string]config.RPC) {
+
 }
