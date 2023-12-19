@@ -44,17 +44,14 @@ type Channel struct {
 	SourcePort      string
 	DestinationPort string
 	Ordering        string
-	StuckPackets    struct {
-		Source      int
-		Destination int
-	}
+	StuckPackets    UnRelaySequences
 }
 
 type UnRelaySequences struct {
 	Src       []uint64 `json:"src"`
 	Dst       []uint64 `json:"dst"`
-	SrcHeight int64    `json:"height"`
-	DstHeight int64    `json:"height"`
+	SrcHeight int64    `json:"src_height"`
+	DstHeight int64    `json:"dst_height"`
 }
 
 func GetClientsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsInfo, error) {
@@ -176,14 +173,13 @@ func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]
 			return ChannelsInfo{}, err
 		}
 
-		channelInfo.Channels[i].StuckPackets.Source += len(unrelayedSequences.Src)
-		channelInfo.Channels[i].StuckPackets.Destination += len(unrelayedSequences.Dst)
+		channelInfo.Channels[i].StuckPackets = unrelayedSequences
 	}
 
 	return channelInfo, nil
 }
 
-// UnrelayedSequences returns the unrelayed sequence numbers between two chains
+// UnrelayedSequences returns the unrelayed sequence numbers between two chains at latest block height
 func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel *chantypes.IdentifiedChannel) (UnRelaySequences, error) {
 	var (
 		srcPacketSeq = []uint64{}

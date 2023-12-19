@@ -3,6 +3,7 @@ package collector
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -39,6 +40,8 @@ var (
 			"dst_channel_id",
 			"src_chain_id",
 			"dst_chain_id",
+			"src_chain_height",
+			"dst_chain_height",
 			"src_chain_name",
 			"dst_chain_name",
 			"discord_ids",
@@ -128,12 +131,14 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 					ch <- prometheus.MustNewConstMetric(
 						channelStuckPackets,
 						prometheus.GaugeValue,
-						float64(sp.StuckPackets.Source),
+						float64(len(sp.StuckPackets.Src)),
 						[]string{
 							sp.Source,
 							sp.Destination,
 							(*cc.RPCs)[path.Chain1.ChainName].ChainID,
 							(*cc.RPCs)[path.Chain2.ChainName].ChainID,
+							strconv.FormatInt(sp.StuckPackets.SrcHeight, 10),
+							strconv.FormatInt(sp.StuckPackets.DstHeight, 10),
 							path.Chain1.ChainName,
 							path.Chain2.ChainName,
 							discordIDs,
@@ -144,12 +149,14 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 					ch <- prometheus.MustNewConstMetric(
 						channelStuckPackets,
 						prometheus.GaugeValue,
-						float64(sp.StuckPackets.Destination),
+						float64(len(sp.StuckPackets.Dst)),
 						[]string{
 							sp.Destination,
 							sp.Source,
 							(*cc.RPCs)[path.Chain2.ChainName].ChainID,
 							(*cc.RPCs)[path.Chain1.ChainName].ChainID,
+							strconv.FormatInt(sp.StuckPackets.SrcHeight, 10),
+							strconv.FormatInt(sp.StuckPackets.DstHeight, 10),
 							path.Chain2.ChainName,
 							path.Chain1.ChainName,
 							discordIDs,
