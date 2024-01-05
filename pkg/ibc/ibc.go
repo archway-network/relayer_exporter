@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/avast/retry-go/v4"
+	ctypes "github.com/cometbft/cometbft/rpc/core/types"
 	chantypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/cosmos/relayer/v2/relayer"
+	"github.com/cosmos/relayer/v2/relayer/chains/cosmos"
 	"go.uber.org/zap"
 
 	"github.com/archway-network/relayer_exporter/pkg/chain"
@@ -16,7 +18,11 @@ import (
 	log "github.com/archway-network/relayer_exporter/pkg/logger"
 )
 
-const stateOpen = 3
+const (
+	stateOpen      = 3
+	rpcTimeout     = "10s"
+	keyringBackend = "test"
+)
 
 var (
 	RtyAttNum = uint(5)
@@ -407,4 +413,60 @@ func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel
 	wg.Wait()
 
 	return urs, nil
+}
+
+func ScanForIBCAcksEvents(ctx context.Context, startHeight int64, rpc config.RPC, newAckHeight chan<- int64) {
+	// track lastQueriedBlockHeight in memory
+	var lastQueriedBlockHeight int64 = startHeight
+	var blockResutlResp *ctypes.ResultBlockResults
+
+	// create chain provider
+	providerConfig := cosmos.CosmosProviderConfig{
+		ChainID:        rpc.ChainID,
+		Timeout:        rpc.Timeout,
+		KeyringBackend: keyringBackend,
+		RPCAddr:        rpc.URL,
+	}
+
+	// provider will provide grpc client
+	provider, err := providerConfig.NewProvider(nil, "", false, rpc.ChainID)
+	if err != nil {
+		log.Error(err.Error())
+	}
+
+	// RPC client to query block results
+	rpcTimeout, err := time.ParseDuration(rpc.Timeout)
+	if err != nil {
+		log.Error(err.Error())
+	}
+
+	rpcClient, err := cosmos.NewRPCClient(rpc.URL, rpcTimeout)
+	if err != nil {
+		log.Error(err.Error())
+	}
+
+	latestHeight, err := provider.QueryLatestHeight(ctx)
+
+	if latestHeight > lastQueriedBlockHeight {
+		if err := retry.Do(func() error {
+			var err error
+			blockResutlResp, err = rpcClient.BlockResults(ctx, &latestHeight)
+			return err
+		}, retry.Context(ctx), RtyAtt, RtyDel, RtyErr, retry.OnRetry(func(n uint, err error) {
+			log.Info(
+				"Failed RPC call to /block_results",
+				zap.String("RPC URL", rpc.URL),
+				zap.Uint("attempt", n+1),
+				zap.Uint("max_attempts", RtyAttNum),
+				zap.Error(err),
+			)
+		})); err != nil {
+			log.Error(
+				"Failed RPC call to /block_results after max retries",
+				zap.String("RPC URL", rpc.URL),
+				zap.Uint("max_attempts", RtyAttNum),
+				zap.Error(err),
+			)
+		}
+	}
 }

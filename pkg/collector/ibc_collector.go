@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -61,7 +62,6 @@ var (
 			"src_chain_height",
 			"src_chain_name",
 			"dst_chain_name",
-			"discord_ids",
 			"status",
 		},
 		nil,
@@ -69,8 +69,16 @@ var (
 )
 
 type IBCCollector struct {
-	RPCs  *map[string]config.RPC
-	Paths []*config.IBCData
+	RPCs          *map[string]config.RPC
+	Paths         []*config.IBCData
+	AckProcessors map[string]AckProcessor // map[ChainName]AckProcessor
+}
+
+type AckProcessor struct {
+	ChainID      string
+	ChannelID    string
+	StartHeight  int64
+	NewAckHeight chan<- int64
 }
 
 func (cc IBCCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -98,7 +106,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 
 			discordIDs := getDiscordIDs(path.Operators)
 
-			// Client info
+			// cosmos_ibc_client_expiry metric collection
 			ci, err := ibc.GetClientsInfo(ctx, path, cc.RPCs)
 			status := successStatus
 
@@ -134,7 +142,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 				}...,
 			)
 
-			// Stuck packets
+			// cosmos_ibc_stuck_packets metric collection
 			status = successStatus
 
 			channelsInfo, err := ibc.GetChannelsInfo(ctx, path, cc.RPCs)
@@ -181,6 +189,13 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 							status,
 						}...,
 					)
+
+					// cosmos_ibc_new_ack_since_stuck metric collection
+					err := cc.SetNewAckSinceStuckMetric(ctx, ch, chInfo, path)
+
+					if err != nil {
+						log.Error(err.Error())
+					}
 				}
 			}
 		}(p)
@@ -191,6 +206,55 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 	log.Debug("Stop collecting", zap.String("metric", clientExpiryMetricName))
 }
 
-func (cc IBCCollector) MaybeStartNewAckPocessor(ch chan<- prometheus.Metric, path *config.IBCData, channelsInfo *ibc.ChannelsInfo, rpcs *map[string]config.RPC) {
+func (cc IBCCollector) SetNewAckSinceStuckMetric(
+	ctx context.Context,
+	ch chan<- prometheus.Metric,
+	chInfo ibc.Channel,
+	path *config.IBCData) error {
+	// start packet processor if stuck packets exist on src or dst
+	// - if a packet process is already active on a chain for a channel, do not start another one.
+	// - channel collector (cc) must keep track of active packet processors
+	// - add new packet processor to cc
+	// packet processor
+	// - start at height of stuck packet
+	// - check for latest height
+	// - if latest height is greater than last_queried_block_height, increment last_queried_block_height and query block_results api for that height
+	// - if block_results has new ack, publish metric, stop packet processor and remove from cc
 
+	// Start Src chain AckProcessors if stuck packets exist and no processor is running
+	if _, ok := cc.AckProcessors[path.Chain1.ChainName]; len(chInfo.StuckPackets.Src) > 0 && !ok {
+		log.Info("Starting packet processor", zap.String("ChainName", path.Chain1.ChainName), zap.String("ChannelID", chInfo.Source))
+		cc.AckProcessors[path.Chain1.ChainName] = AckProcessor{
+			ChainID:      (*cc.RPCs)[path.Chain1.ChainName].ChainID,
+			ChannelID:    chInfo.Source,
+			StartHeight:  chInfo.StuckPackets.SrcHeight,
+			NewAckHeight: make(chan<- int64),
+		}
+
+		go ibc.ScanForIBCAcksEvents(ctx, chInfo.StuckPackets.SrcHeight, (*cc.RPCs)[path.Chain1.ChainName])
+
+		// start packet processor
+		return nil
+	}
+
+	// Start Dst chain AckProcessors if stuck packets exist and no processor is running
+	if _, ok := cc.AckProcessors[path.Chain2.ChainName]; len(chInfo.StuckPackets.Dst) > 0 && !ok {
+		log.Info("Starting packet processor", zap.String("ChainName", path.Chain2.ChainName), zap.String("ChannelID", chInfo.Source))
+		cc.AckProcessors[path.Chain1.ChainName] = AckProcessor{
+			ChainID:     (*cc.RPCs)[path.Chain2.ChainName].ChainID,
+			ChannelID:   chInfo.Source,
+			StartHeight: chInfo.StuckPackets.SrcHeight,
+		}
+		return nil
+	}
+
+	if _, ok := cc.AckProcessors[path.Chain2.ChainName]; ok {
+		log.Info("Packet processor already running", zap.String("ChainName", path.Chain1.ChainName), zap.String("ChannelID", chInfo.Source))
+	}
+
+	if _, ok := cc.AckProcessors[path.Chain2.ChainName]; ok {
+		log.Info("Packet processor already running", zap.String("ChainName", path.Chain2.ChainName), zap.String("ChannelID", chInfo.Source))
+	}
+
+	return nil
 }
