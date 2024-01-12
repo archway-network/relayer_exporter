@@ -23,8 +23,8 @@ var (
 		clientExpiryMetricName,
 		"Returns light client expiry in unixtime.",
 		[]string{
-			"host_chain_id",
-			"target_chain_id",
+			"src_chain_id",
+			"dst_chain_id",
 			"src_chain_name",
 			"dst_chain_name",
 			"client_id",
