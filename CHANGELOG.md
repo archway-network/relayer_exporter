@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.0](https://github.com/archway-network/relayer_exporter/compare/v0.12.0...v0.13.0) (2024-01-12)
+
+
+### Features
+
+* add chainName for clientExpiry ([#33](https://github.com/archway-network/relayer_exporter/issues/33)) ([0fea165](https://github.com/archway-network/relayer_exporter/commit/0fea1656a18ef27602938a42419ef69e641482d1))
+
 ## [0.12.0](https://github.com/archway-network/relayer_exporter/compare/v0.11.0...v0.12.0) (2023-11-27)
 
 
