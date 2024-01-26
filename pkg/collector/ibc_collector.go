@@ -53,13 +53,12 @@ var (
 	)
 	channelNewAckSinceStuck = prometheus.NewDesc(
 		channelNewAckSinceStuckMetricName,
-		"Returns 1 if new IBC ack was observed since last stuck packet detection, else returns 0.",
+		"Returns block height of new observed IBC Ack since last stuck packet detection, else returns 0.",
 		[]string{
 			"src_channel_id",
 			"dst_channel_id",
 			"src_chain_id",
 			"dst_chain_id",
-			"src_chain_height",
 			"src_chain_name",
 			"dst_chain_name",
 			"status",
@@ -78,16 +77,16 @@ type AckProcessor struct {
 	ChainID      string
 	ChannelID    string
 	StartHeight  int64
-	NewAckHeight chan<- int64
+	NewAckHeight chan uint64
 }
 
-func (cc IBCCollector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- clientExpiry
-	ch <- channelStuckPackets
-	ch <- channelNewAckSinceStuck
+func (cc IBCCollector) Describe(metricDesc chan<- *prometheus.Desc) {
+	metricDesc <- clientExpiry
+	metricDesc <- channelStuckPackets
+	metricDesc <- channelNewAckSinceStuck
 }
 
-func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
+func (cc IBCCollector) Collect(metric chan<- prometheus.Metric) {
 	log.Debug(
 		"Start collecting",
 		zap.String(
@@ -116,7 +115,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 				log.Error(err.Error())
 			}
 
-			ch <- prometheus.MustNewConstMetric(
+			metric <- prometheus.MustNewConstMetric(
 				clientExpiry,
 				prometheus.GaugeValue,
 				float64(ci.ChainAClientExpiration.Unix()),
@@ -129,7 +128,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 				}...,
 			)
 
-			ch <- prometheus.MustNewConstMetric(
+			metric <- prometheus.MustNewConstMetric(
 				clientExpiry,
 				prometheus.GaugeValue,
 				float64(ci.ChainBClientExpiration.Unix()),
@@ -154,7 +153,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 
 			if !reflect.DeepEqual(channelsInfo, ibc.ChannelsInfo{}) {
 				for _, chInfo := range channelsInfo.Channels {
-					ch <- prometheus.MustNewConstMetric(
+					metric <- prometheus.MustNewConstMetric(
 						channelStuckPackets,
 						prometheus.GaugeValue,
 						float64(len(chInfo.StuckPackets.Src)),
@@ -172,7 +171,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 						}...,
 					)
 
-					ch <- prometheus.MustNewConstMetric(
+					metric <- prometheus.MustNewConstMetric(
 						channelStuckPackets,
 						prometheus.GaugeValue,
 						float64(len(chInfo.StuckPackets.Dst)),
@@ -191,7 +190,7 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 					)
 
 					// cosmos_ibc_new_ack_since_stuck metric collection
-					err := cc.SetNewAckSinceStuckMetric(ctx, ch, chInfo, path)
+					err := cc.SetNewAckSinceStuckMetric(ctx, chInfo, path, metric)
 
 					if err != nil {
 						log.Error(err.Error())
@@ -208,53 +207,154 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 
 func (cc IBCCollector) SetNewAckSinceStuckMetric(
 	ctx context.Context,
-	ch chan<- prometheus.Metric,
 	chInfo ibc.Channel,
-	path *config.IBCData) error {
-	// start packet processor if stuck packets exist on src or dst
-	// - if a packet process is already active on a chain for a channel, do not start another one.
-	// - channel collector (cc) must keep track of active packet processors
-	// - add new packet processor to cc
-	// packet processor
-	// - start at height of stuck packet
-	// - check for latest height
-	// - if latest height is greater than last_queried_block_height, increment last_queried_block_height and query block_results api for that height
-	// - if block_results has new ack, publish metric, stop packet processor and remove from cc
+	path *config.IBCData,
+	metric chan<- prometheus.Metric) error {
 
+	// Note: cosmos sdk block height is uint64 but prometheus metric type expects float64
+	var newAckHeight uint64
+
+	// Hash key to search for AckProcessor in cc (<chainName_channelID>)
+	srcHashKey := fmt.Sprintf("%s_%s", path.Chain1.ChainName, chInfo.Source)
+	dstHashKey := fmt.Sprintf("%s_%s", path.Chain2.ChainName, chInfo.Destination)
+
+	// Publish source chain metric
 	// Start Src chain AckProcessors if stuck packets exist and no processor is running
-	if _, ok := cc.AckProcessors[path.Chain1.ChainName]; len(chInfo.StuckPackets.Src) > 0 && !ok {
-		log.Info("Starting packet processor", zap.String("ChainName", path.Chain1.ChainName), zap.String("ChannelID", chInfo.Source))
-		cc.AckProcessors[path.Chain1.ChainName] = AckProcessor{
+	if _, ok := cc.AckProcessors[srcHashKey]; len(chInfo.StuckPackets.Src) > 0 && !ok {
+		log.Info("Creating packet processor", zap.String("ChainName", path.Chain1.ChainName), zap.String("ChannelID", chInfo.Source))
+		cc.AckProcessors[srcHashKey] = AckProcessor{
 			ChainID:      (*cc.RPCs)[path.Chain1.ChainName].ChainID,
 			ChannelID:    chInfo.Source,
 			StartHeight:  chInfo.StuckPackets.SrcHeight,
-			NewAckHeight: make(chan<- int64),
+			NewAckHeight: make(chan uint64),
+		}
+		// set default for newAckHeight
+		newAckHeight = 0
+
+		//TODO:start scan for new Acks from start height
+
+		// read from NewAckHeight from AckProcessor
+		select {
+		case newAckHeight = <-cc.AckProcessors[srcHashKey].NewAckHeight:
+			log.Debug("new ack found", zap.String("ChainName", path.Chain1.ChainName), zap.String("ChannelID", chInfo.Source),
+				zap.Uint64("newAckHeight", newAckHeight))
+		default:
+			log.Debug("no new acks found", zap.String("ChainName", path.Chain1.ChainName), zap.String("ChannelID", chInfo.Source))
+			newAckHeight = 0
 		}
 
-		go ibc.ScanForIBCAcksEvents(ctx, chInfo.StuckPackets.SrcHeight, (*cc.RPCs)[path.Chain1.ChainName])
+	} else if _, ok := cc.AckProcessors[srcHashKey]; ok {
+		// AckProcessor already running, read from NewAckHeight
+		// set default for newAckHeight
+		newAckHeight = 0
 
-		// start packet processor
-		return nil
-	}
+		//TODO:start scan for new Acks from start height
 
-	// Start Dst chain AckProcessors if stuck packets exist and no processor is running
-	if _, ok := cc.AckProcessors[path.Chain2.ChainName]; len(chInfo.StuckPackets.Dst) > 0 && !ok {
-		log.Info("Starting packet processor", zap.String("ChainName", path.Chain2.ChainName), zap.String("ChannelID", chInfo.Source))
-		cc.AckProcessors[path.Chain1.ChainName] = AckProcessor{
-			ChainID:     (*cc.RPCs)[path.Chain2.ChainName].ChainID,
-			ChannelID:   chInfo.Source,
-			StartHeight: chInfo.StuckPackets.SrcHeight,
+		// read from NewAckHeight from AckProcessor
+		select {
+		case newAckHeight = <-cc.AckProcessors[srcHashKey].NewAckHeight:
+			log.Debug("new ack found", zap.String("ChainName", path.Chain1.ChainName), zap.String("ChannelID", chInfo.Source),
+				zap.Uint64("newAckHeight", newAckHeight))
+		default:
+			log.Debug("no new acks found", zap.String("ChainName", path.Chain1.ChainName), zap.String("ChannelID", chInfo.Source))
+			newAckHeight = 0
 		}
-		return nil
+	} else {
+		// no stuck packets, no processor running, no new acks
+		newAckHeight = 0
 	}
 
-	if _, ok := cc.AckProcessors[path.Chain2.ChainName]; ok {
-		log.Info("Packet processor already running", zap.String("ChainName", path.Chain1.ChainName), zap.String("ChannelID", chInfo.Source))
+	// Publish source chain metric
+	// channelNewAckSinceStuck = prometheus.NewDesc(
+	// 	channelNewAckSinceStuckMetricName,
+	// 	"Returns 1 if new IBC ack was observed since last stuck packet detection, else returns 0.",
+	// 	[]string{
+	// 		"src_channel_id",
+	// 		"dst_channel_id",
+	// 		"src_chain_id",
+	// 		"dst_chain_id",
+	// 		"src_chain_height",
+	// 		"src_chain_name",
+	// 		"dst_chain_name",
+	// 		"status",
+	// 	},
+	// 	nil,
+	// )
+	metric <- prometheus.MustNewConstMetric(
+		channelNewAckSinceStuck,
+		prometheus.GaugeValue,
+		float64(newAckHeight),
+		[]string{
+			chInfo.Source,
+			chInfo.Destination,
+			(*cc.RPCs)[path.Chain1.ChainName].ChainID,
+			(*cc.RPCs)[path.Chain2.ChainName].ChainID,
+			path.Chain1.ChainName,
+			path.Chain2.ChainName,
+			"success",
+		}...,
+	)
+
+	// Publish destination chain metric
+	if _, ok := cc.AckProcessors[dstHashKey]; len(chInfo.StuckPackets.Dst) > 0 && !ok {
+		// Start Dst chain AckProcessors if stuck packets exist and no processor is running
+		log.Info("Creating packet processor", zap.String("ChainName", path.Chain2.ChainName), zap.String("ChannelID", chInfo.Destination))
+		cc.AckProcessors[dstHashKey] = AckProcessor{
+			ChainID:      (*cc.RPCs)[path.Chain2.ChainName].ChainID,
+			ChannelID:    chInfo.Source,
+			StartHeight:  chInfo.StuckPackets.DstHeight,
+			NewAckHeight: make(chan uint64),
+		}
+		//start scan for new Acks from start height
+
+		// read from NewAckHeight from AckProcessor
+		log.Info("creating packet processor", zap.String("ChainName", path.Chain2.ChainName), zap.String("ChannelID", chInfo.Destination))
+
+		select {
+		case newAckHeight = <-cc.AckProcessors[dstHashKey].NewAckHeight:
+			log.Debug("new ack found", zap.String("ChainName", path.Chain2.ChainName), zap.String("ChannelID", chInfo.Destination),
+				zap.Uint64("newAckHeight", newAckHeight))
+		default:
+			log.Debug("no new acks found", zap.String("ChainName", path.Chain2.ChainName), zap.String("ChannelID", chInfo.Destination))
+			newAckHeight = 0
+		}
+
+		newAckHeight = <-cc.AckProcessors[path.Chain2.ChainName].NewAckHeight
+	} else if _, ok := cc.AckProcessors[dstHashKey]; ok {
+		// AckProcessor already running, read from NewAckHeight
+		// set default for newAckHeight
+		newAckHeight = 0
+
+		//TODO:start scan for new Acks from start height
+
+		// read from NewAckHeight from AckProcessor
+		select {
+		case newAckHeight = <-cc.AckProcessors[dstHashKey].NewAckHeight:
+			log.Debug("new ack found", zap.String("ChainName", path.Chain2.ChainName), zap.String("ChannelID", chInfo.Source),
+				zap.Uint64("newAckHeight", newAckHeight))
+		default:
+			log.Debug("no new acks found", zap.String("ChainName", path.Chain2.ChainName), zap.String("ChannelID", chInfo.Source))
+			newAckHeight = 0
+		}
+	} else {
+		// no stuck packets, no processor running, no new acks
+		newAckHeight = 0
 	}
 
-	if _, ok := cc.AckProcessors[path.Chain2.ChainName]; ok {
-		log.Info("Packet processor already running", zap.String("ChainName", path.Chain2.ChainName), zap.String("ChannelID", chInfo.Source))
-	}
+	metric <- prometheus.MustNewConstMetric(
+		channelNewAckSinceStuck,
+		prometheus.GaugeValue,
+		float64(newAckHeight),
+		[]string{
+			chInfo.Source,
+			chInfo.Destination,
+			(*cc.RPCs)[path.Chain1.ChainName].ChainID,
+			(*cc.RPCs)[path.Chain2.ChainName].ChainID,
+			path.Chain1.ChainName,
+			path.Chain2.ChainName,
+			"fail",
+		}...,
+	)
 
 	return nil
 }

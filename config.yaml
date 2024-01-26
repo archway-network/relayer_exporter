@@ -2,7 +2,7 @@ github:
   org: archway-network
   repo: networks
   dir: _IBC
-  testnetsDir: testnets/_IBC
+  testnetsDir: devnets/_IBC
 rpc:
   # mainnets
   - chainName: archway
@@ -22,7 +22,7 @@ rpc:
     url: https://cosmoshub-rpc.stakely.io:443
   - chainName: decentr
     chainId: mainnet-3
-    url: https://poseidon.mainnet.decentr.xyz:443
+    url: https://rpc.decentr.chaintools.tech:443
   - chainName: jackal
     chainId: jackal-1
     url: https://jackal-rpc.polkachu.com:443
@@ -43,7 +43,7 @@ rpc:
     url: https://omniflix.kingnodes.com:443
   - chainName: osmosis
     chainId: osmosis-1
-    url: https://osmosis-rpc.stakely.io:443
+    url: https://osmosis-rpc.onivalidator.com:443
   - chainName: quicksilver
     chainId: quicksilver-2
     url: https://rpc.quicksilver.zone:443
@@ -64,25 +64,32 @@ rpc:
     url: https://rpc.comdex.one:443
   - chainName: neutron
     chainId: neutron-1
-    url: https://rpc-kralum.neutron-1.neutron.org:443
+    url: https://rpc.novel.remedy.tm.p2p.org:443
+  - chainName: qwoyn
+    chainId: qwoyn-1
+    url: https://qwoyn-rpc.staketab.org:443
   - chainName: stargaze
     chainId: stargaze-1
     url: https://rpc.stargaze-apis.com:443
+  - chainName: andromeda
+    chainId: andromeda-1
+    url: https://andromeda.rpc.kjnodes.com:443
 
   # testnets
-  - chainName: archwaytestnet
-    chainId: constantine-3
-    url: https://rpc.constantine.archway.tech:443
-  - chainName: axelartestnet
-    chainId: axelar-testnet-lisbon-3
-    url: https://axelar-testnet-rpc.qubelabs.io:443
+  - chainName: archwaydevnet
+    chainId: titus-3
+    url: https://rpc.titus.archway.io:443
   - chainName: osmosistestnet
     chainId: osmo-test-5
-    url: https://rpc.osmotest5.osmosis.zone:443
+    url: https://rpc-1.testnet.osmosis.nodes.guru:443
 
 accounts:
-  # Foundation
+  # foundation-feegrant-astrovault
   - address: archway1gpyqzc0aerc85cpk2cm8ec6zkc95x5yqrakskv
+    chainName: archway
+    denom: aarch
+  # foundation-feegrant-ojo
+  - address: archway1c2cu99uzjauaj5hg45edhzgsk5saz43y6d3zxp
     chainName: archway
     denom: aarch
   # PhiLabs

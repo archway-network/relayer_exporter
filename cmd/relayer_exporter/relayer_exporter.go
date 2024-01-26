@@ -68,8 +68,9 @@ func main() {
 	}
 
 	ibcCollector := collector.IBCCollector{
-		RPCs:  rpcs,
-		Paths: paths,
+		RPCs:          rpcs,
+		Paths:         paths,
+		AckProcessors: map[string]collector.AckProcessor{},
 	}
 
 	balancesCollector := collector.WalletBalanceCollector{
