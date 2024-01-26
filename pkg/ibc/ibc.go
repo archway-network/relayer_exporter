@@ -3,16 +3,32 @@ package ibc
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
+	"github.com/avast/retry-go/v4"
 	chantypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/cosmos/relayer/v2/relayer"
+	"github.com/cosmos/relayer/v2/relayer/chains/cosmos"
+	"go.uber.org/zap"
 
 	"github.com/archway-network/relayer_exporter/pkg/chain"
 	"github.com/archway-network/relayer_exporter/pkg/config"
+	log "github.com/archway-network/relayer_exporter/pkg/logger"
 )
 
-const stateOpen = 3
+const (
+	stateOpen      = 3
+	rpcTimeout     = "10s"
+	keyringBackend = "test"
+)
+
+var (
+	RtyAttNum = uint(5)
+	RtyAtt    = retry.Attempts(RtyAttNum)
+	RtyDel    = retry.Delay(time.Millisecond * 400)
+	RtyErr    = retry.LastErrorOnly(true)
+)
 
 type ClientsInfo struct {
 	ChainA                 *relayer.Chain
@@ -33,10 +49,14 @@ type Channel struct {
 	SourcePort      string
 	DestinationPort string
 	Ordering        string
-	StuckPackets    struct {
-		Source      int
-		Destination int
-	}
+	StuckPackets    UnRelaySequences
+}
+
+type UnRelaySequences struct {
+	Src       []uint64 `json:"src"`
+	Dst       []uint64 `json:"dst"`
+	SrcHeight int64    `json:"src_height"`
+	DstHeight int64    `json:"dst_height"`
 }
 
 func GetClientsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsInfo, error) {
@@ -129,13 +149,6 @@ func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]
 		return ChannelsInfo{}, fmt.Errorf("error: %w for %+v", err, cdB)
 	}
 
-	// test that RPC endpoints are working
-	if _, _, err := relayer.QueryLatestHeights(
-		ctx, chainA, chainB,
-	); err != nil {
-		return channelInfo, fmt.Errorf("error: %w for %v", err, cdA)
-	}
-
 	for i, c := range channelInfo.Channels {
 		var order chantypes.Order
 
@@ -159,11 +172,302 @@ func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]
 			ChannelId: c.Source,
 		}
 
-		unrelayedSequences := relayer.UnrelayedSequences(ctx, chainA, chainB, &ch)
+		unrelayedSequences, err := UnrelayedSequences(ctx, chainA, chainB, &ch)
 
-		channelInfo.Channels[i].StuckPackets.Source += len(unrelayedSequences.Src)
-		channelInfo.Channels[i].StuckPackets.Destination += len(unrelayedSequences.Dst)
+		if err != nil {
+			return ChannelsInfo{}, err
+		}
+
+		channelInfo.Channels[i].StuckPackets = unrelayedSequences
 	}
 
 	return channelInfo, nil
+}
+
+// UnrelayedSequences returns the unrelayed sequence numbers between two chains at latest block height
+func UnrelayedSequences(ctx context.Context, src, dst *relayer.Chain, srcChannel *chantypes.IdentifiedChannel) (UnRelaySequences, error) {
+	var (
+		srcPacketSeq = []uint64{}
+		dstPacketSeq = []uint64{}
+		urs          = UnRelaySequences{Src: []uint64{}, Dst: []uint64{}, SrcHeight: 0, DstHeight: 0}
+	)
+
+	srch, dsth, err := relayer.QueryLatestHeights(ctx, src, dst)
+	if err != nil {
+		return urs, err
+	}
+
+	urs.SrcHeight = srch
+	urs.DstHeight = dsth
+
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		var (
+			res *chantypes.QueryPacketCommitmentsResponse
+			err error
+		)
+		if err = retry.Do(func() error {
+			// Query the packet commitment
+			res, err = src.ChainProvider.QueryPacketCommitments(ctx, uint64(srch), srcChannel.ChannelId, srcChannel.PortId)
+			switch {
+			case err != nil:
+				return err
+			case res == nil:
+				return fmt.Errorf("no error on QueryPacketCommitments for %s, however response is nil", src.ChainID())
+			default:
+				return nil
+			}
+		}, retry.Context(ctx), RtyAtt, RtyDel, RtyErr, retry.OnRetry(func(n uint, err error) {
+			log.Info(
+				"Failed to query packet commitments",
+				zap.String("channel_id", srcChannel.ChannelId),
+				zap.String("port_id", srcChannel.PortId),
+				zap.Uint("attempt", n+1),
+				zap.Uint("max_attempts", RtyAttNum),
+				zap.Error(err),
+			)
+		})); err != nil {
+			log.Error(
+				"Failed to query packet commitments after max retries",
+				zap.String("channel_id", srcChannel.ChannelId),
+				zap.String("port_id", srcChannel.PortId),
+				zap.Uint("attempts", RtyAttNum),
+				zap.Error(err),
+			)
+			return
+		}
+
+		for _, pc := range res.Commitments {
+			srcPacketSeq = append(srcPacketSeq, pc.Sequence)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		var (
+			res *chantypes.QueryPacketCommitmentsResponse
+			err error
+		)
+		if err = retry.Do(func() error {
+			res, err = dst.ChainProvider.QueryPacketCommitments(ctx, uint64(dsth), srcChannel.Counterparty.ChannelId, srcChannel.Counterparty.PortId)
+			switch {
+			case err != nil:
+				return err
+			case res == nil:
+				return fmt.Errorf("no error on QueryPacketCommitments for %s, however response is nil", dst.ChainID())
+			default:
+				return nil
+			}
+		}, retry.Context(ctx), RtyAtt, RtyDel, RtyErr, retry.OnRetry(func(n uint, err error) {
+			log.Info(
+				"Failed to query packet commitments",
+				zap.String("channel_id", srcChannel.Counterparty.ChannelId),
+				zap.String("port_id", srcChannel.Counterparty.PortId),
+				zap.Uint("attempt", n+1),
+				zap.Uint("max_attempts", RtyAttNum),
+				zap.Error(err),
+			)
+		})); err != nil {
+			log.Error(
+				"Failed to query packet commitments after max retries",
+				zap.String("channel_id", srcChannel.Counterparty.ChannelId),
+				zap.String("port_id", srcChannel.Counterparty.PortId),
+				zap.Uint("attempts", RtyAttNum),
+				zap.Error(err),
+			)
+			return
+		}
+
+		for _, pc := range res.Commitments {
+			dstPacketSeq = append(dstPacketSeq, pc.Sequence)
+		}
+	}()
+
+	wg.Wait()
+
+	var (
+		srcUnreceivedPackets, dstUnreceivedPackets []uint64
+	)
+
+	if len(srcPacketSeq) > 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			// Query all packets sent by src that have not been received by dst.
+			if err := retry.Do(func() error {
+				var err error
+				srcUnreceivedPackets, err = dst.ChainProvider.QueryUnreceivedPackets(ctx, uint64(dsth), srcChannel.Counterparty.ChannelId, srcChannel.Counterparty.PortId, srcPacketSeq)
+				return err
+			}, retry.Context(ctx), RtyAtt, RtyDel, RtyErr, retry.OnRetry(func(n uint, err error) {
+				log.Info(
+					"Failed to query unreceived packets",
+					zap.String("channel_id", srcChannel.Counterparty.ChannelId),
+					zap.String("port_id", srcChannel.Counterparty.PortId),
+					zap.Uint("attempt", n+1),
+					zap.Uint("max_attempts", RtyAttNum),
+					zap.Error(err),
+				)
+			})); err != nil {
+				log.Error(
+					"Failed to query unreceived packets after max retries",
+					zap.String("channel_id", srcChannel.Counterparty.ChannelId),
+					zap.String("port_id", srcChannel.Counterparty.PortId),
+					zap.Uint("attempts", RtyAttNum),
+					zap.Error(err),
+				)
+			}
+		}()
+	}
+
+	if len(dstPacketSeq) > 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			// Query all packets sent by dst that have not been received by src.
+			if err := retry.Do(func() error {
+				var err error
+				dstUnreceivedPackets, err = src.ChainProvider.QueryUnreceivedPackets(ctx, uint64(srch), srcChannel.ChannelId, srcChannel.PortId, dstPacketSeq)
+				return err
+			}, retry.Context(ctx), RtyAtt, RtyDel, RtyErr, retry.OnRetry(func(n uint, err error) {
+				log.Info(
+					"Failed to query unreceived packets",
+					zap.String("channel_id", srcChannel.ChannelId),
+					zap.String("port_id", srcChannel.PortId),
+					zap.Uint("attempt", n+1),
+					zap.Uint("max_attempts", RtyAttNum),
+					zap.Error(err),
+				)
+			})); err != nil {
+				log.Error(
+					"Failed to query unreceived packets after max retries",
+					zap.String("channel_id", srcChannel.ChannelId),
+					zap.String("port_id", srcChannel.PortId),
+					zap.Uint("attempts", RtyAttNum),
+					zap.Error(err),
+				)
+				return
+			}
+		}()
+	}
+	wg.Wait()
+
+	// If this is an UNORDERED channel we can return at this point.
+	if srcChannel.Ordering != chantypes.ORDERED {
+		urs.Src = srcUnreceivedPackets
+		urs.Dst = dstUnreceivedPackets
+		return urs, nil
+	}
+
+	// For ordered channels we want to only relay the packet whose sequence number is equal to
+	// the expected next packet receive sequence from the counterparty.
+	if len(srcUnreceivedPackets) > 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			nextSeqResp, err := dst.ChainProvider.QueryNextSeqRecv(ctx, dsth, srcChannel.Counterparty.ChannelId, srcChannel.Counterparty.PortId)
+			if err != nil {
+				log.Error(
+					"Failed to query next packet receive sequence",
+					zap.String("channel_id", srcChannel.Counterparty.ChannelId),
+					zap.String("port_id", srcChannel.Counterparty.PortId),
+					zap.Error(err),
+				)
+				return
+			}
+
+			for _, seq := range srcUnreceivedPackets {
+				if seq == nextSeqResp.NextSequenceReceive {
+					urs.Src = append(urs.Src, seq)
+					break
+				}
+			}
+		}()
+	}
+
+	if len(dstUnreceivedPackets) > 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			nextSeqResp, err := src.ChainProvider.QueryNextSeqRecv(ctx, srch, srcChannel.ChannelId, srcChannel.PortId)
+			if err != nil {
+				log.Error(
+					"Failed to query next packet receive sequence",
+					zap.String("channel_id", srcChannel.ChannelId),
+					zap.String("port_id", srcChannel.PortId),
+					zap.Error(err),
+				)
+				return
+			}
+
+			for _, seq := range dstUnreceivedPackets {
+				if seq == nextSeqResp.NextSequenceReceive {
+					urs.Dst = append(urs.Dst, seq)
+					break
+				}
+			}
+		}()
+	}
+	wg.Wait()
+
+	return urs, nil
+}
+
+func ScanForIBCAcksEvents(ctx context.Context, startHeight int64, rpc config.RPC, newAckHeight chan<- int64) {
+	// track lastQueriedBlockHeight in memory
+	var lastQueriedBlockHeight int64 = startHeight
+
+	// create chain provider
+	providerConfig := cosmos.CosmosProviderConfig{
+		ChainID:        rpc.ChainID,
+		Timeout:        rpc.Timeout,
+		KeyringBackend: keyringBackend,
+		RPCAddr:        rpc.URL,
+	}
+
+	// provider will provide grpc client
+	provider, err := providerConfig.NewProvider(nil, "", false, rpc.ChainID)
+	if err != nil {
+		log.Error(err.Error())
+	}
+
+	// RPC client to query block results
+	rpcTimeout, err := time.ParseDuration(rpc.Timeout)
+	if err != nil {
+		log.Error(err.Error())
+	}
+
+	rpcClient, err := cosmos.NewRPCClient(rpc.URL, rpcTimeout)
+	if err != nil {
+		log.Error(err.Error())
+	}
+
+	latestHeight, err := provider.QueryLatestHeight(ctx)
+
+	if err != nil {
+		log.Error(err.Error())
+	}
+
+	// scan for IBC acks events
+	for {
+		select {
+		case <-ctx.Done():
+			log.Debug("ScanForIBCAcksEvents done")
+			return
+		default:
+			if latestHeight > lastQueriedBlockHeight {
+				blockResutlResp, err := rpcClient.BlockResults(ctx, &latestHeight)
+				if err != nil {
+					log.Error(err.Error())
+				}
+				lastQueriedBlockHeight = lastQueriedBlockHeight + 1
+				for _, txResult := range blockResutlResp.TxsResults {
+					for _, event := range txResult.Events {
+						log.Debug("Event", zap.Int64("Height", blockResutlResp.Height), zap.String("Type", event.Type))
+					}
+				}
+			}
+		}
+	}
 }
