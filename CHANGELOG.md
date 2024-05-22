@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/archway-network/relayer_exporter/compare/v0.13.1...v0.14.0) (2024-05-22)
+
+
+### Features
+
+* use latest release-please ([#39](https://github.com/archway-network/relayer_exporter/issues/39)) ([98a0ef1](https://github.com/archway-network/relayer_exporter/commit/98a0ef1b5d6f3a5f9a7a5d103a49ec78e326c785))
+
 ## [0.13.1](https://github.com/archway-network/relayer_exporter/compare/v0.13.0...v0.13.1) (2024-05-22)
 
 
