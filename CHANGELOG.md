@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.1](https://github.com/archway-network/relayer_exporter/compare/v0.13.0...v0.13.1) (2024-05-22)
+
+
+### Bug Fixes
+
+* ignore wildcard channels ([#36](https://github.com/archway-network/relayer_exporter/issues/36)) ([f629c41](https://github.com/archway-network/relayer_exporter/commit/f629c41e94ce72e3b9b8f7b752b2a58638de0269))
+
 ## [0.13.0](https://github.com/archway-network/relayer_exporter/compare/v0.12.0...v0.13.0) (2024-01-12)
 
 
