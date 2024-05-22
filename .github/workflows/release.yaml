@@ -13,7 +13,7 @@ jobs:
     steps:
       - id: release-please
         name: Release Please
-        uses: google-github-actions/release-please-action@v3
+        uses: googleapis/release-please-action@v4
         with:
           release-type: go
           package-name: relayer_exporter
