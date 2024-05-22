@@ -3,13 +3,16 @@ package ibc
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	chantypes "github.com/cosmos/ibc-go/v7/modules/core/04-channel/types"
 	"github.com/cosmos/relayer/v2/relayer"
+	"go.uber.org/zap"
 
 	"github.com/archway-network/relayer_exporter/pkg/chain"
 	"github.com/archway-network/relayer_exporter/pkg/config"
+	log "github.com/archway-network/relayer_exporter/pkg/logger"
 )
 
 const stateOpen = 3
@@ -96,6 +99,13 @@ func GetChannelsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]
 
 	// Init channel data
 	for _, c := range ibc.Channels {
+		// Ignore channels with wildcard ChannelID or PortID
+		if strings.Contains(c.Chain1.ChannelID, "*") || strings.Contains(c.Chain1.PortID, "*") ||
+			strings.Contains(c.Chain2.ChannelID, "*") || strings.Contains(c.Chain2.PortID, "*") {
+			log.Info("Skipping channel with wildcard ChannelID or PortID", zap.Any("channel", c))
+			continue
+		}
+
 		var channel Channel
 		channel.Source = c.Chain1.ChannelID
 		channel.Destination = c.Chain2.ChannelID
