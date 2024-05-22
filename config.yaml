@@ -55,7 +55,7 @@ rpc:
     url: https://gravity-rpc.polkachu.com:443
   - chainName: secretnetwork
     chainId: secret-4
-    url: https://rpc-secret.01node.com:443
+    url: https://secretnetwork-rpc.highstakes.ch:443
   - chainName: terra2
     chainId: phoenix-1
     url: https://terra-rpc.stakely.io:443
