@@ -7,22 +7,22 @@ rpc:
   # mainnets
   - chainName: archway
     chainId: archway-1
-    url: https://rpc.mainnet.archway.io:443
+    url: https://rpc.mainnet.internal.archway.io:443
   - chainName: agoric
     chainId: agoric-3
-    url: https://agoric.rpc.kjnodes.com:443
+    url: https://main.rpc.agoric.net:443
   - chainName: axelar
     chainId: axelar-dojo-1
-    url: https://rpc-1.axelar.nodes.guru:443
+    url: https://axelar-rpc.quickapi.com:443
   - chainName: bitcanna
     chainId: bitcanna-1
     url: https://rpc.bitcanna.io:443
   - chainName: cosmoshub
     chainId: cosmoshub-4
-    url: https://cosmoshub-rpc.stakely.io:443
+    url: https://rpc.cosmoshub.strange.love:443
   - chainName: decentr
     chainId: mainnet-3
-    url: https://poseidon.mainnet.decentr.xyz:443
+    url: https://rpc.decentr.chaintools.tech:443
   - chainName: jackal
     chainId: jackal-1
     url: https://jackal-rpc.polkachu.com:443
@@ -40,10 +40,10 @@ rpc:
     url: https://nois.rpc.kjnodes.com:443
   - chainName: omniflixhub
     chainId: omniflixhub-1
-    url: https://omniflix.kingnodes.com:443
+    url: https://rpc.omniflix.stakeup.tech:443
   - chainName: osmosis
     chainId: osmosis-1
-    url: https://osmosis-rpc.stakely.io:443
+    url: https://rpc-osmosis.whispernode.com:443
   - chainName: quicksilver
     chainId: quicksilver-2
     url: https://rpc.quicksilver.zone:443
@@ -52,10 +52,10 @@ rpc:
     url: https://rpc-umee.mzonder.com:443
   - chainName: gravitybridge
     chainId: gravity-bridge-3
-    url: https://gravitychain.io:26657
+    url: https://gravity-rpc.polkachu.com:443
   - chainName: secretnetwork
     chainId: secret-4
-    url: https://rpc.secret.express:443
+    url: https://rpc-secret.01node.com:443
   - chainName: terra2
     chainId: phoenix-1
     url: https://terra-rpc.stakely.io:443
@@ -64,10 +64,73 @@ rpc:
     url: https://rpc.comdex.one:443
   - chainName: neutron
     chainId: neutron-1
-    url: https://rpc-kralum.neutron-1.neutron.org:443
+    url: https://rpc.novel.remedy.tm.p2p.org:443
+  - chainName: qwoyn
+    chainId: qwoyn-1
+    url: https://qwoyn-rpc.staketab.org:443
   - chainName: stargaze
     chainId: stargaze-1
     url: https://rpc.stargaze-apis.com:443
+  - chainName: andromeda
+    chainId: andromeda-1
+    url: https://andromeda-rpc.stake-town.com:443
+  - chainName: pylons
+    chainId: pylons-mainnet-1
+    url: https://pylons-rpc.noders.services:443
+  - chainName: injective
+    chainId: injective-1
+    url: https://rpc-injective.whispernode.com:443
+  - chainName: dydx
+    chainId: dydx-mainnet-1
+    url: https://rpc-dydx.ecostake.com:443
+  - chainName: akash
+    chainId: akashnet-2
+    url: https://rpc-akash.ecostake.com:443
+  - chainName: cudos
+    chainId: cudos-1
+    url: https://cudos-rpc.kleomedes.network:443
+  - chainName: celestia
+    chainId: celestia
+    url: https://celestia-rpc.enigma-validator.com:443
+  - chainName: evmos
+    chainId: evmos_9001-2
+    url: https://evmos-rpc.theamsolutions.info:443
+  - chainName: stride
+    chainId: stride-1
+    url: https://rpc-stride.whispernode.com:443
+  - chainName: persistence
+    chainId: core-1
+    url: https://persistence-rpc.publicnode.com:443
+  - chainName: composable
+    chainId: centauri-1
+    url: https://rpc.composable.citizenweb3.com:443
+  - chainName: empowerchain
+    chainId: empowerchain-1
+    url: https://rpc-empowerchain.mzonder.com:443
+  - chainName: planq
+    chainId: planq_7070-2
+    url: https://rpc.planq.network:443
+  - chainName: passage
+    chainId: passage-2
+    url: https://passage-rpc.staketab.org:443
+  - chainName: sentinel
+    chainId: sentinelhub-2
+    url: https://sentinel-rpc.publicnode.com:443
+  - chainName: dymension
+    chainId: dymension_1100-1
+    url: https://dymension-rpc.ibs.team:443
+  - chainName: vidulum
+    chainId: vidulum-1
+    url: https://vidulum.declab.pro:26619
+  - chainName: bitsong
+    chainId: bitsong-2b
+    url: https://rpc.bitsong.quokkastake.io:443
+  - chainName: coreum
+    chainId: coreum-mainnet-1
+    url: https://coreum-rpc.ibs.team:443
+  - chainName: nibiru
+    chainId: cataclysm-1
+    url: https://nibiru.rpc.kjnodes.com:443
 
   # testnets
   - chainName: archwaytestnet
@@ -78,11 +141,14 @@ rpc:
     url: https://axelar-testnet-rpc.qubelabs.io:443
   - chainName: osmosistestnet
     chainId: osmo-test-5
-    url: https://rpc.osmotest5.osmosis.zone:443
-
+    url: https://rpc-1.testnet.osmosis.nodes.guru:443
 accounts:
-  # Foundation
+  # foundation-feegrant-astrovault
   - address: archway1gpyqzc0aerc85cpk2cm8ec6zkc95x5yqrakskv
+    chainName: archway
+    denom: aarch
+  # foundation-feegrant-ojo
+  - address: archway1c2cu99uzjauaj5hg45edhzgsk5saz43y6d3zxp
     chainName: archway
     denom: aarch
   # PhiLabs
