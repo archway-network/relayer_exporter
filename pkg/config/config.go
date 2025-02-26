@@ -128,7 +128,7 @@ func (a *Account) GetBalance(ctx context.Context, rpcs *map[string]RPC) error {
 // chain_names to RPCs. It uses IBCData already extracted from
 // github IBC registry to validate config for missing RPCs and raises
 // an error if any are missing.
-func (c *Config) GetRPCsMap(ibcPaths []*IBCData) (*map[string]RPC, error) {
+func (c *Config) GetRPCsMap() (*map[string]RPC, error) {
 	rpcs := map[string]RPC{}
 
 	for _, rpc := range c.RPCs {
@@ -137,19 +137,6 @@ func (c *Config) GetRPCsMap(ibcPaths []*IBCData) (*map[string]RPC, error) {
 		}
 
 		rpcs[rpc.ChainName] = rpc
-	}
-
-	// Validate RPCs exist for each IBC path
-	for _, ibcPath := range ibcPaths {
-		// Check RPC for chain 1
-		if _, ok := rpcs[ibcPath.Chain1.ChainName]; !ok {
-			return &rpcs, fmt.Errorf(ErrMissingRPCConfigMsg, ibcPath.Chain1.ChainName)
-		}
-
-		// Check RPC for chain 2
-		if _, ok := rpcs[ibcPath.Chain2.ChainName]; !ok {
-			return &rpcs, fmt.Errorf(ErrMissingRPCConfigMsg, ibcPath.Chain2.ChainName)
-		}
 	}
 
 	return &rpcs, nil

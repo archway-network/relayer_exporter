@@ -19,13 +19,13 @@ rpc:
     url: https://rpc.bitcanna.io:443
   - chainName: cosmoshub
     chainId: cosmoshub-4
-    url: https://rpc.cosmoshub.strange.love:443
+    url: https://cosmos-rpc.quickapi.com:443
   - chainName: decentr
     chainId: mainnet-3
     url: https://rpc.decentr.chaintools.tech:443
   - chainName: jackal
     chainId: jackal-1
-    url: https://jackal-rpc.polkachu.com:443
+    url: https://jackal.rpc.kjnodes.com:443
   - chainName: juno
     chainId: juno-1
     url: https://juno-rpc.publicnode.com:443
@@ -37,25 +37,25 @@ rpc:
     url: https://noble-rpc.polkachu.com:443
   - chainName: nois
     chainId: nois-1
-    url: https://nois.rpc.kjnodes.com:443
+    url: https://rpc.nois.silentvalidator.com:443
   - chainName: omniflixhub
     chainId: omniflixhub-1
-    url: https://rpc.omniflix.stakeup.tech:443
+    url: https://omniflix-rpc.dakshavalidator.in:443
   - chainName: osmosis
     chainId: osmosis-1
-    url: https://rpc-osmosis.whispernode.com:443
+    url: https://rpc-osmosis.ecostake.com:443
   - chainName: quicksilver
     chainId: quicksilver-2
     url: https://rpc.quicksilver.zone:443
   - chainName: umee
     chainId: umee-1
-    url: https://rpc-umee.mzonder.com:443
+    url: https://umee-rpc.polkachu.com:443
   - chainName: gravitybridge
     chainId: gravity-bridge-3
     url: https://gravity-rpc.polkachu.com:443
   - chainName: secretnetwork
     chainId: secret-4
-    url: https://secretnetwork-rpc.highstakes.ch:443
+    url: https://rpc.mainnet.secretsaturn.net:443
   - chainName: terra2
     chainId: phoenix-1
     url: https://terra-rpc.stakely.io:443
@@ -64,22 +64,22 @@ rpc:
     url: https://rpc.comdex.one:443
   - chainName: neutron
     chainId: neutron-1
-    url: https://rpc.novel.remedy.tm.p2p.org:443
+    url: https://rpc-voidara.neutron-1.neutron.org:443
   - chainName: qwoyn
     chainId: qwoyn-1
-    url: https://qwoyn-rpc.staketab.org:443
+    url: https://rpc-qwoyn.theamsolutions.info:443
   - chainName: stargaze
     chainId: stargaze-1
-    url: https://rpc.stargaze-apis.com:443
+    url: https://rpc.stargaze.silentvalidator.com:443
   - chainName: andromeda
     chainId: andromeda-1
-    url: https://andromeda-rpc.stake-town.com:443
+    url: https://andromeda.rpc.kjnodes.com:443
   - chainName: pylons
     chainId: pylons-mainnet-1
-    url: https://pylons-rpc.noders.services:443
+    url: https://rpc.nodejumper.io:443/pylons
   - chainName: injective
     chainId: injective-1
-    url: https://rpc-injective.whispernode.com:443
+    url: https://injective-rpc.publicnode.com:443
   - chainName: dydx
     chainId: dydx-mainnet-1
     url: https://rpc-dydx.ecostake.com:443
@@ -88,22 +88,22 @@ rpc:
     url: https://rpc-akash.ecostake.com:443
   - chainName: cudos
     chainId: cudos-1
-    url: https://cudos-rpc.kleomedes.network:443
+    url: https://cudos-rpc.lavenderfive.com:443
   - chainName: celestia
     chainId: celestia
     url: https://celestia-rpc.enigma-validator.com:443
   - chainName: evmos
     chainId: evmos_9001-2
-    url: https://evmos-rpc.theamsolutions.info:443
+    url: https://rpc-evmos-01.stakeflow.io:443
   - chainName: stride
     chainId: stride-1
-    url: https://rpc-stride.whispernode.com:443
+    url: https://stride-rpc.polkachu.com:443
   - chainName: persistence
     chainId: core-1
     url: https://persistence-rpc.publicnode.com:443
   - chainName: composable
     chainId: centauri-1
-    url: https://rpc.composable.citizenweb3.com:443
+    url: https://composable-mainnet-rpc.autostake.com:443
   - chainName: empowerchain
     chainId: empowerchain-1
     url: https://rpc-empowerchain.mzonder.com:443
@@ -115,16 +115,13 @@ rpc:
     url: https://passage-rpc.staketab.org:443
   - chainName: sentinel
     chainId: sentinelhub-2
-    url: https://sentinel-rpc.publicnode.com:443
+    url: https://rpc-sentinel.chainvibes.com:443
   - chainName: dymension
     chainId: dymension_1100-1
     url: https://dymension-rpc.ibs.team:443
-  - chainName: vidulum
-    chainId: vidulum-1
-    url: https://vidulum.declab.pro:26619
   - chainName: bitsong
     chainId: bitsong-2b
-    url: https://rpc.bitsong.quokkastake.io:443
+    url: https://rpc.explorebitsong.com:443
   - chainName: coreum
     chainId: coreum-mainnet-1
     url: https://coreum-rpc.ibs.team:443
@@ -135,13 +132,16 @@ rpc:
   # testnets
   - chainName: archwaytestnet
     chainId: constantine-3
-    url: https://rpc.constantine.archway.tech:443
+    url: https://rpc.constantine.archway.io:443
   - chainName: axelartestnet
     chainId: axelar-testnet-lisbon-3
-    url: https://axelar-testnet-rpc.qubelabs.io:443
+    url: https://rpc-axelar-testnet.imperator.co:443
   - chainName: osmosistestnet
     chainId: osmo-test-5
     url: https://rpc-1.testnet.osmosis.nodes.guru:443
+  # - chainName: nobletestnet
+  #   chainId: grand-1
+  #   url: https://noble-testnet-rpc.polkachu.com:443
 accounts:
   # foundation-feegrant-astrovault
   - address: archway1gpyqzc0aerc85cpk2cm8ec6zkc95x5yqrakskv
@@ -153,5 +153,8 @@ accounts:
     denom: aarch
   # PhiLabs
   - address: archway1ktka5q3cnsy3ar7qwj2huzz6qj9q4ys7h74l9y
+    chainName: archway
+    denom: aarch
+  - address: archway1avwvqzu9gv86g5fxx5p2xqe0w33wklt27jusdrhszwccnfnxx0rsmzz8nu
     chainName: archway
     denom: aarch
