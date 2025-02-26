@@ -184,6 +184,7 @@ func (c *Config) getPaths(ctx context.Context, dir string, client *github.Client
 	for _, file := range ibcDir {
 		if strings.HasSuffix(*file.Path, ibcPathSuffix) {
 			log.Debug(fmt.Sprintf("Fetching IBC data for %s/%s/%s", c.GitHub.Org, c.GitHub.Repo, *file.Path))
+
 			content, _, _, err := client.Repositories.GetContents(
 				ctx,
 				c.GitHub.Org,
@@ -221,6 +222,7 @@ func (c *Config) Validate() error {
 	// https://github.com/cosmos/relayer/blob/259b1278264180a2aefc2085f1b55753849c4815/cregistry/chain_info.go#L115
 	err := validate.RegisterValidation("has_port", func(fl validator.FieldLevel) bool {
 		val := fl.Field().String()
+
 		urlParsed, err := url.Parse(val)
 		if err != nil {
 			return false
@@ -234,6 +236,7 @@ func (c *Config) Validate() error {
 		); err != nil || portNum > 65535 || portNum < 1 {
 			return false
 		}
+
 		return true
 	})
 	if err != nil {

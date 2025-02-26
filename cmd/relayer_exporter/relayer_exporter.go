@@ -101,10 +101,14 @@ func main() {
 
 	// Start periodic refresh in background
 	var wg sync.WaitGroup
+
 	wg.Add(1)
+
 	go func() {
 		defer wg.Done()
+
 		ticker := time.NewTicker(*refreshInterval)
+
 		defer ticker.Stop()
 
 		for {
@@ -113,10 +117,12 @@ func main() {
 				return
 			case <-ticker.C:
 				log.Info("Refreshing configuration and collectors")
+
 				if err := refreshCollectors(ctx, cfg, registry); err != nil {
 					log.Error(fmt.Sprintf("Failed to refresh collectors: %v", err))
 					continue
 				}
+
 				log.Info("Successfully refreshed configuration and collectors")
 			}
 		}
