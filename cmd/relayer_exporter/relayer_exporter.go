@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -91,7 +93,14 @@ func main() {
 		zap.String("Testnet Directory", cfg.GitHub.TestnetsIBCDir),
 	)
 
-	ctx := context.Background()
+	// Create a context with cancel
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel() // Ensure context is cancelled when main exits
+
+	// Setup signal handling for graceful shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
 	registry := prometheus.NewRegistry()
 
 	// Initial setup of collectors
@@ -101,45 +110,65 @@ func main() {
 
 	// Start periodic refresh in background
 	var wg sync.WaitGroup
-
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
-
 		ticker := time.NewTicker(*refreshInterval)
-
 		defer ticker.Stop()
 
 		for {
 			select {
 			case <-ctx.Done():
+				log.Info("Stopping collector refresh routine")
 				return
 			case <-ticker.C:
 				log.Info("Refreshing configuration and collectors")
-
 				if err := refreshCollectors(ctx, cfg, registry); err != nil {
 					log.Error(fmt.Sprintf("Failed to refresh collectors: %v", err))
 					continue
 				}
-
 				log.Info("Successfully refreshed configuration and collectors")
 			}
 		}
 	}()
 
+	// Setup HTTP server
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%d", *port),
+		Handler: nil,
+	}
+
 	// Setup HTTP handler with custom registry
 	handler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 	http.Handle("/metrics", handler)
 
-	addr := fmt.Sprintf(":%d", *port)
-	log.Info(fmt.Sprintf("Starting server on addr: %s", addr))
-	log.Info(fmt.Sprintf("Configuration refresh interval: %s", refreshInterval.String()))
+	// Start server in a goroutine
+	go func() {
+		log.Info(fmt.Sprintf("Starting server on addr: %s", server.Addr))
+		log.Info(fmt.Sprintf("Configuration refresh interval: %s", refreshInterval.String()))
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatal(fmt.Sprintf("Server error: %v", err))
+		}
+	}()
 
-	if err := http.ListenAndServe(addr, nil); err != nil {
-		log.Fatal(err.Error())
+	// Wait for shutdown signal
+	<-sigChan
+	log.Info("Received shutdown signal")
+
+	// Initiate graceful shutdown
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+
+	// Trigger context cancellation to stop the refresh routine
+	cancel()
+
+	// Shutdown the HTTP server
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		log.Error(fmt.Sprintf("Server shutdown error: %v", err))
 	}
 
 	// Wait for background tasks to complete
 	wg.Wait()
+	log.Info("Shutdown complete")
 }
