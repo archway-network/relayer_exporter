@@ -3,7 +3,6 @@ package config
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -83,7 +82,7 @@ func TestGetRPC(t *testing.T) {
 					Timeout:   "5s",
 				},
 			},
-			err: fmt.Errorf(ErrMissingRPCConfigMsg, "archwaytestnet"),
+			err: nil,
 		},
 	}
 
@@ -93,7 +92,7 @@ func TestGetRPC(t *testing.T) {
 				GlobalRPCTimeout: "5s",
 				RPCs:             tc.rpcs,
 			}
-			res, err := cfg.GetRPCsMap(tc.paths)
+			res, err := cfg.GetRPCsMap()
 			assert.Equal(t, err, tc.err)
 			assert.Equal(t, &tc.resp, res)
 		})

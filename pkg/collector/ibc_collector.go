@@ -16,6 +16,7 @@ import (
 const (
 	clientExpiryMetricName        = "cosmos_ibc_client_expiry"
 	channelStuckPacketsMetricName = "cosmos_ibc_stuck_packets"
+	configMissingMetricName       = "cosmos_ibc_config_missing"
 )
 
 var (
@@ -48,6 +49,12 @@ var (
 		},
 		nil,
 	)
+	configMissing = prometheus.NewDesc(
+		configMissingMetricName,
+		"Returns if the rpc config is missing for a channel.",
+		[]string{"src_chain_id", "dst_chain_id", "src_chain_name", "dst_chain_name"},
+		nil,
+	)
 )
 
 type IBCCollector struct {
@@ -58,6 +65,7 @@ type IBCCollector struct {
 func (cc IBCCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- clientExpiry
 	ch <- channelStuckPackets
+	ch <- configMissing
 }
 
 func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {

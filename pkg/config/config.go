@@ -128,7 +128,7 @@ func (a *Account) GetBalance(ctx context.Context, rpcs *map[string]RPC) error {
 // chain_names to RPCs. It uses IBCData already extracted from
 // github IBC registry to validate config for missing RPCs and raises
 // an error if any are missing.
-func (c *Config) GetRPCsMap(ibcPaths []*IBCData) (*map[string]RPC, error) {
+func (c *Config) GetRPCsMap() (*map[string]RPC, error) {
 	rpcs := map[string]RPC{}
 
 	for _, rpc := range c.RPCs {
@@ -137,19 +137,6 @@ func (c *Config) GetRPCsMap(ibcPaths []*IBCData) (*map[string]RPC, error) {
 		}
 
 		rpcs[rpc.ChainName] = rpc
-	}
-
-	// Validate RPCs exist for each IBC path
-	for _, ibcPath := range ibcPaths {
-		// Check RPC for chain 1
-		if _, ok := rpcs[ibcPath.Chain1.ChainName]; !ok {
-			return &rpcs, fmt.Errorf(ErrMissingRPCConfigMsg, ibcPath.Chain1.ChainName)
-		}
-
-		// Check RPC for chain 2
-		if _, ok := rpcs[ibcPath.Chain2.ChainName]; !ok {
-			return &rpcs, fmt.Errorf(ErrMissingRPCConfigMsg, ibcPath.Chain2.ChainName)
-		}
 	}
 
 	return &rpcs, nil
@@ -197,6 +184,7 @@ func (c *Config) getPaths(ctx context.Context, dir string, client *github.Client
 	for _, file := range ibcDir {
 		if strings.HasSuffix(*file.Path, ibcPathSuffix) {
 			log.Debug(fmt.Sprintf("Fetching IBC data for %s/%s/%s", c.GitHub.Org, c.GitHub.Repo, *file.Path))
+
 			content, _, _, err := client.Repositories.GetContents(
 				ctx,
 				c.GitHub.Org,
@@ -234,6 +222,7 @@ func (c *Config) Validate() error {
 	// https://github.com/cosmos/relayer/blob/259b1278264180a2aefc2085f1b55753849c4815/cregistry/chain_info.go#L115
 	err := validate.RegisterValidation("has_port", func(fl validator.FieldLevel) bool {
 		val := fl.Field().String()
+
 		urlParsed, err := url.Parse(val)
 		if err != nil {
 			return false
@@ -247,6 +236,7 @@ func (c *Config) Validate() error {
 		); err != nil || portNum > 65535 || portNum < 1 {
 			return false
 		}
+
 		return true
 	})
 	if err != nil {
