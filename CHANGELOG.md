@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/archway-network/relayer_exporter/compare/v0.14.0...v0.15.0) (2025-02-28)
+
+
+### Features
+
+* Add dynamic configuration refresh and remove panic on missing RPCs ([#41](https://github.com/archway-network/relayer_exporter/issues/41)) ([9304051](https://github.com/archway-network/relayer_exporter/commit/93040513ff86fc0a4f5c929eee190634ff31a245))
+
 ## [0.14.0](https://github.com/archway-network/relayer_exporter/compare/v0.13.1...v0.14.0) (2024-05-22)
 
 
