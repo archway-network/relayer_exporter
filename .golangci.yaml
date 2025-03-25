@@ -1,54 +1,66 @@
----
-output:
-  sort-results: true
-
+version: "2"
 linters:
   enable:
     - depguard
     - gocritic
-    - gofumpt
-    - goimports
-    - revive
     - misspell
+    - revive
     - unconvert
-    - unused
     - wsl
-
+  settings:
+    depguard:
+      rules:
+        main:
+          files:
+            - $all
+          deny:
+            - pkg: github.com/sirupsen/logrus
+              desc: Not allowed
+            - pkg: github.com/pkg/errors
+              desc: Should be replaced by standard lib errors package
+            - pkg: sync/atomic
+              desc: Use go.uber.org/atomic instead of sync/atomic
+            - pkg: io/ioutil
+              desc: Use corresponding 'os' or 'io' functions instead.
+    errcheck:
+      exclude-functions:
+        - io.Copy
+        - io.WriteString
+        - (net/http.ResponseWriter).Write
+        - (*net/http.Server).Shutdown
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - gocritic
+        text: appendAssign
+      - linters:
+          - errcheck
+        path: _test.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
   max-same-issues: 0
-  exclude-rules:
-    - linters:
-        - gocritic
-      text: "appendAssign"
-    - path: _test.go
-      linters:
-        - errcheck
-
-linters-settings:
-  depguard:
-    rules:
-      main:
-        files:
-          - $all
-        deny:
-          - pkg: "github.com/sirupsen/logrus"
-            desc: Not allowed
-          - pkg: "github.com/pkg/errors"
-            desc: Should be replaced by standard lib errors package
-          - pkg: "sync/atomic"
-            desc: Use go.uber.org/atomic instead of sync/atomic
-          - pkg: "io/ioutil"
-            desc: Use corresponding 'os' or 'io' functions instead.
-  errcheck:
-    exclude-functions:
-      # Don't flag lines such as "io.Copy(io.Discard, resp.Body)".
-      - io.Copy
-      # The next two are used in HTTP handlers, any error is handled by the server itself.
-      - io.WriteString
-      - (net/http.ResponseWriter).Write
-      # No need to check for errors on server's shutdown.
-      - (*net/http.Server).Shutdown
-  goimports:
-    local-prefixes: github.com/prometheus/prometheus
-  gofumpt:
-    extra-rules: true
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    gofumpt:
+      extra-rules: true
+    goimports:
+      local-prefixes:
+        - github.com/prometheus/prometheus
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
