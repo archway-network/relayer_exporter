@@ -8,17 +8,32 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
+func TestNewConfig(t *testing.T) {
+
+	pConfig, err := NewConfig("../../config.yaml")
+	if err != nil {
+		t.Fatalf("Failed to create config: %v", err)
+	}
+	_ = pConfig
+}
+
 func TestGetRPC(t *testing.T) {
 	testCases := []struct {
 		name  string
-		rpcs  []RPC
+		rpcs  []*RPC
 		paths []*IBCData
 		resp  map[string]RPC
 		err   error
 	}{
 		{
 			name: "No Missing or Invalid RPCs",
-			rpcs: []RPC{
+			rpcs: []*RPC{
 				{
 					ChainName: "archway",
 					ChainID:   "archway-1",
@@ -50,7 +65,7 @@ func TestGetRPC(t *testing.T) {
 		},
 		{
 			name: "Missing RPCs",
-			rpcs: []RPC{
+			rpcs: []*RPC{
 				{
 					ChainName: "archway",
 					ChainID:   "archway-1",
@@ -92,8 +107,7 @@ func TestGetRPC(t *testing.T) {
 				GlobalRPCTimeout: "5s",
 				RPCs:             tc.rpcs,
 			}
-			res, err := cfg.GetRPCsMap()
-			assert.Equal(t, err, tc.err)
+			res := cfg.GetRPCsMap()
 			assert.Equal(t, &tc.resp, res)
 		})
 	}

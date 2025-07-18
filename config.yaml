@@ -112,7 +112,7 @@ rpc:
     url: https://rpc.planq.network:443
   - chainName: passage
     chainId: passage-2
-    url: https://passage-rpc.staketab.org:443
+    url: https://passage-rpc.polkachu.com:443
   - chainName: sentinel
     chainId: sentinelhub-2
     url: https://rpc-sentinel.chainvibes.com:443

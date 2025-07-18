@@ -32,34 +32,60 @@ func getVersion() string {
 
 // refreshCollectors updates the collectors with new configuration
 func refreshCollectors(ctx context.Context, cfg *config.Config, registry *prometheus.Registry) error {
-	paths, err := cfg.IBCPaths(ctx)
+
+	err := refreshIBCCollector(ctx, cfg, registry)
 	if err != nil {
-		return fmt.Errorf("failed to get IBC paths: %w", err)
+		return err
+	}
+	err = refreshWalletBalanceCollector(cfg, registry)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func refreshWalletBalanceCollector(cfg *config.Config, registry *prometheus.Registry) error {
+	if len(cfg.Accounts) == 0 {
+		log.Warn("No accounts configured, skipping wallet balance collector refresh")
+		return nil
 	}
 
-	rpcs, err := cfg.GetRPCsMap()
-	if err != nil {
-		return fmt.Errorf("failed to get RPCs map: %w", err)
-	}
-
+	rpcs := cfg.GetRPCsMap()
 	// Unregister existing collectors
-	registry.Unregister(collector.IBCCollector{})
 	registry.Unregister(collector.WalletBalanceCollector{})
 
-	// Create and register new collectors
-	ibcCollector := collector.IBCCollector{
-		RPCs:  rpcs,
-		Paths: paths,
-	}
-
+	// Create and register new collector
 	balancesCollector := collector.WalletBalanceCollector{
 		RPCs:     rpcs,
 		Accounts: cfg.Accounts,
 	}
 
-	registry.MustRegister(ibcCollector)
 	registry.MustRegister(balancesCollector)
 
+	return nil
+}
+
+// refreshIBCCollectors updates the IBC collector with new paths
+func refreshIBCCollector(ctx context.Context, cfg *config.Config, registry *prometheus.Registry) error {
+
+	paths, err := cfg.IBCPaths(ctx)
+	if err != nil {
+		log.Warn("Failed to get IBC paths, skipping IBC collector refresh", zap.Error(err))
+		return nil
+	}
+
+	if len(paths) > 0 {
+		rpcs := cfg.GetRPCsMap()
+		// Unregister existing collector
+		registry.Unregister(collector.IBCCollector{})
+
+		// Create and register new collector
+		ibcCollector := collector.IBCCollector{
+			RPCs:  rpcs,
+			Paths: paths,
+		}
+		registry.MustRegister(ibcCollector)
+	}
 	return nil
 }
 
@@ -82,16 +108,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-
-	log.Info(
-		fmt.Sprintf(
-			"Github IBC registry: %s/%s",
-			cfg.GitHub.Org,
-			cfg.GitHub.Repo,
-		),
-		zap.String("Mainnet Directory", cfg.GitHub.IBCDir),
-		zap.String("Testnet Directory", cfg.GitHub.TestnetsIBCDir),
-	)
 
 	// Create a context with cancel
 	ctx, cancel := context.WithCancel(context.Background())
