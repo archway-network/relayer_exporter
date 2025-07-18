@@ -8,18 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
 func TestNewConfig(t *testing.T) {
-
 	pConfig, err := NewConfig("../../config.yaml")
 	if err != nil {
 		t.Fatalf("Failed to create config: %v", err)
 	}
+
 	_ = pConfig
 }
 

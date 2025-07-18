@@ -32,15 +32,16 @@ func getVersion() string {
 
 // refreshCollectors updates the collectors with new configuration
 func refreshCollectors(ctx context.Context, cfg *config.Config, registry *prometheus.Registry) error {
-
 	err := refreshIBCCollector(ctx, cfg, registry)
 	if err != nil {
 		return err
 	}
+
 	err = refreshWalletBalanceCollector(cfg, registry)
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -67,7 +68,6 @@ func refreshWalletBalanceCollector(cfg *config.Config, registry *prometheus.Regi
 
 // refreshIBCCollectors updates the IBC collector with new paths
 func refreshIBCCollector(ctx context.Context, cfg *config.Config, registry *prometheus.Registry) error {
-
 	paths, err := cfg.IBCPaths(ctx)
 	if err != nil {
 		log.Warn("Failed to get IBC paths, skipping IBC collector refresh", zap.Error(err))
@@ -86,6 +86,7 @@ func refreshIBCCollector(ctx context.Context, cfg *config.Config, registry *prom
 		}
 		registry.MustRegister(ibcCollector)
 	}
+
 	return nil
 }
 
@@ -111,7 +112,6 @@ func main() {
 
 	// Create a context with cancel
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel() // Ensure context is cancelled when main exits
 
 	// Setup signal handling for graceful shutdown
 	sigChan := make(chan os.Signal, 1)
@@ -124,12 +124,17 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
+	// Defer cancel after all fatal errors
+	defer cancel() // Ensure context is cancelled when main exits
+
 	// Start periodic refresh in background
 	var wg sync.WaitGroup
+
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
+
 		ticker := time.NewTicker(*refreshInterval)
 		defer ticker.Stop()
 
@@ -140,10 +145,12 @@ func main() {
 				return
 			case <-ticker.C:
 				log.Info("Refreshing configuration and collectors")
+
 				if err := refreshCollectors(ctx, cfg, registry); err != nil {
 					log.Error(fmt.Sprintf("Failed to refresh collectors: %v", err))
 					continue
 				}
+
 				log.Info("Successfully refreshed configuration and collectors")
 			}
 		}
@@ -163,6 +170,7 @@ func main() {
 	go func() {
 		log.Info(fmt.Sprintf("Starting server on addr: %s", server.Addr))
 		log.Info(fmt.Sprintf("Configuration refresh interval: %s", refreshInterval.String()))
+
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal(fmt.Sprintf("Server error: %v", err))
 		}

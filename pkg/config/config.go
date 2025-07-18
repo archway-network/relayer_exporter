@@ -143,6 +143,7 @@ func (c *Config) IBCPaths(ctx context.Context) ([]*IBCData, error) {
 
 	if c.GitHub.Token != "" {
 		log.Debug("Using provided GITHUB_TOKEN env var for GitHub client")
+
 		client = github.NewClient(nil).WithAuthToken(c.GitHub.Token)
 	}
 
@@ -255,6 +256,7 @@ func (c *Config) Validate() error {
 		if err := validate.Struct(account); err != nil {
 			return fmt.Errorf("%v for accounts config: %+v", err, account)
 		}
+
 		rpcMap := c.GetRPCsMap()
 		if rpcMap != nil {
 			_, ok := (*rpcMap)[account.ChainName]
