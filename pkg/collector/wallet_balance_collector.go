@@ -3,6 +3,7 @@ package collector
 import (
 	"context"
 	"math/big"
+	"strings"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -20,7 +21,7 @@ const (
 var walletBalance = prometheus.NewDesc(
 	walletBalanceMetricName,
 	"Returns wallet balance for an address on a chain.",
-	[]string{"account", "chain_id", "denom", "status"}, nil,
+	[]string{"account", "chain_id", "denom", "status", "tags"}, nil,
 )
 
 type WalletBalanceCollector struct {
@@ -60,7 +61,7 @@ func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
 				walletBalance,
 				prometheus.GaugeValue,
 				balance,
-				[]string{account.Address, (*wb.RPCs)[account.ChainName].ChainID, account.Denom, status}...,
+				[]string{account.Address, (*wb.RPCs)[account.ChainName].ChainID, account.Denom, status, strings.Join(account.Tags, ",")}...,
 			)
 		}(*a)
 	}

@@ -32,6 +32,7 @@ type Account struct {
 	Denom     string `yaml:"denom" validate:"required"`
 	ChainName string `yaml:"chainName" validate:"required"`
 	Balance   math.Int
+	Tags      []string `yaml:"tags,omitempty"`
 }
 
 type RPC struct {
