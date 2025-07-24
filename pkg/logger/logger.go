@@ -16,7 +16,8 @@ func init() {
 	var err error
 
 	level = zap.NewAtomicLevel()
-	config := zap.NewProductionConfig()
+	// config := zap.NewProductionConfig()
+	config := zap.NewDevelopmentConfig()
 
 	config.Level = level
 	config.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout(time.RFC3339)
@@ -44,6 +45,10 @@ func Debug(message string, fields ...zap.Field) {
 
 func Error(message string, fields ...zap.Field) {
 	logger.Error(message, fields...)
+}
+
+func Warn(message string, fields ...zap.Field) {
+	logger.Warn(message, fields...)
 }
 
 func Fatal(message string, fields ...zap.Field) {

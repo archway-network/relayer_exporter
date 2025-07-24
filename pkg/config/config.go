@@ -14,9 +14,9 @@ import (
 	"github.com/caarlos0/env/v9"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/go-github/v55/github"
+	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
-	"github.com/archway-network/relayer_exporter/pkg/chain"
 	log "github.com/archway-network/relayer_exporter/pkg/logger"
 )
 
@@ -32,6 +32,7 @@ type Account struct {
 	Denom     string `yaml:"denom" validate:"required"`
 	ChainName string `yaml:"chainName" validate:"required"`
 	Balance   math.Int
+	Tags      []string `yaml:"tags,omitempty"`
 }
 
 type RPC struct {
@@ -41,17 +42,19 @@ type RPC struct {
 	Timeout   string `yaml:"timeout"`
 }
 
+type GitHub struct {
+	Org            string `yaml:"org" validate:"required"`
+	Repo           string `yaml:"repo" validate:"required"`
+	IBCDir         string `yaml:"dir" validate:"required"`
+	TestnetsIBCDir string `yaml:"testnetsDir"`
+	Token          string `env:"GITHUB_TOKEN"`
+}
+
 type Config struct {
-	Accounts         []Account `yaml:"accounts"`
-	GlobalRPCTimeout string    `env:"GLOBAL_RPC_TIMEOUT" envDefault:"5s"`
-	RPCs             []RPC     `yaml:"rpc"`
-	GitHub           struct {
-		Org            string `yaml:"org" validate:"required"`
-		Repo           string `yaml:"repo" validate:"required"`
-		IBCDir         string `yaml:"dir" validate:"required"`
-		TestnetsIBCDir string `yaml:"testnetsDir"`
-		Token          string `env:"GITHUB_TOKEN"`
-	} `yaml:"github" validate:"required"`
+	Accounts         []*Account `yaml:"accounts"`
+	GlobalRPCTimeout string     `env:"GLOBAL_RPC_TIMEOUT" envDefault:"5s"`
+	RPCs             []*RPC     `yaml:"rpc"`
+	GitHub           *GitHub    `yaml:"github"`
 }
 
 type IBCChainMeta struct {
@@ -104,31 +107,11 @@ type Discord struct {
 	ID     string `json:"id"`
 }
 
-func (a *Account) GetBalance(ctx context.Context, rpcs *map[string]RPC) error {
-	chain, err := chain.PrepChain(ctx, chain.Info{
-		ChainID: (*rpcs)[a.ChainName].ChainID,
-		RPCAddr: (*rpcs)[a.ChainName].URL,
-		Timeout: (*rpcs)[a.ChainName].Timeout,
-	})
-	if err != nil {
-		return err
-	}
-
-	coins, err := chain.ChainProvider.QueryBalanceWithAddress(ctx, a.Address)
-	if err != nil {
-		return err
-	}
-
-	a.Balance = coins.AmountOf(a.Denom)
-
-	return nil
-}
-
 // GetRPCsMap uses the provided config file to return a map of chain
 // chain_names to RPCs. It uses IBCData already extracted from
 // github IBC registry to validate config for missing RPCs and raises
 // an error if any are missing.
-func (c *Config) GetRPCsMap() (*map[string]RPC, error) {
+func (c *Config) GetRPCsMap() *map[string]RPC {
 	rpcs := map[string]RPC{}
 
 	for _, rpc := range c.RPCs {
@@ -136,14 +119,28 @@ func (c *Config) GetRPCsMap() (*map[string]RPC, error) {
 			rpc.Timeout = c.GlobalRPCTimeout
 		}
 
-		rpcs[rpc.ChainName] = rpc
+		rpcs[rpc.ChainName] = *rpc
 	}
 
-	return &rpcs, nil
+	return &rpcs
 }
 
 func (c *Config) IBCPaths(ctx context.Context) ([]*IBCData, error) {
 	client := github.NewClient(nil)
+
+	if c.GitHub == nil {
+		return nil, fmt.Errorf("GitHub configuration is required")
+	}
+
+	log.Info(
+		fmt.Sprintf(
+			"Github IBC registry: %s/%s",
+			c.GitHub.Org,
+			c.GitHub.Repo,
+		),
+		zap.String("Mainnet Directory", c.GitHub.IBCDir),
+		zap.String("Testnet Directory", c.GitHub.TestnetsIBCDir),
+	)
 
 	if c.GitHub.Token != "" {
 		log.Debug("Using provided GITHUB_TOKEN env var for GitHub client")
@@ -259,6 +256,14 @@ func (c *Config) Validate() error {
 	for _, account := range c.Accounts {
 		if err := validate.Struct(account); err != nil {
 			return fmt.Errorf("%v for accounts config: %+v", err, account)
+		}
+
+		rpcMap := c.GetRPCsMap()
+		if rpcMap != nil {
+			_, ok := (*rpcMap)[account.ChainName]
+			if !ok {
+				return fmt.Errorf(ErrMissingRPCConfigMsg, account.ChainName)
+			}
 		}
 	}
 

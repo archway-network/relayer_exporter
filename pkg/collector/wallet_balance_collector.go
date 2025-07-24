@@ -1,12 +1,15 @@
 package collector
 
 import (
+	"context"
 	"math/big"
+	"strings"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"github.com/archway-network/relayer_exporter/pkg/chain"
 	"github.com/archway-network/relayer_exporter/pkg/config"
 	log "github.com/archway-network/relayer_exporter/pkg/logger"
 )
@@ -18,12 +21,12 @@ const (
 var walletBalance = prometheus.NewDesc(
 	walletBalanceMetricName,
 	"Returns wallet balance for an address on a chain.",
-	[]string{"account", "chain_id", "denom", "status"}, nil,
+	[]string{"account", "chain_id", "denom", "status", "tags"}, nil,
 )
 
 type WalletBalanceCollector struct {
 	RPCs     *map[string]config.RPC
-	Accounts []config.Account
+	Accounts []*config.Account
 }
 
 func (wb WalletBalanceCollector) Describe(ch chan<- *prometheus.Desc) {
@@ -44,7 +47,7 @@ func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
 			balance := 0.0
 			status := successStatus
 
-			err := account.GetBalance(ctx, wb.RPCs)
+			err := getBalance(ctx, &account, wb.RPCs)
 			if err != nil {
 				status = errorStatus
 
@@ -58,12 +61,32 @@ func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
 				walletBalance,
 				prometheus.GaugeValue,
 				balance,
-				[]string{account.Address, (*wb.RPCs)[account.ChainName].ChainID, account.Denom, status}...,
+				[]string{account.Address, (*wb.RPCs)[account.ChainName].ChainID, account.Denom, status, strings.Join(account.Tags, ",")}...,
 			)
-		}(a)
+		}(*a)
 	}
 
 	wg.Wait()
 
 	log.Debug("Stop collecting", zap.String("metric", walletBalanceMetricName))
+}
+
+func getBalance(ctx context.Context, a *config.Account, rpcs *map[string]config.RPC) error {
+	chain, err := chain.PrepChain(ctx, chain.Info{
+		ChainID: (*rpcs)[a.ChainName].ChainID,
+		RPCAddr: (*rpcs)[a.ChainName].URL,
+		Timeout: (*rpcs)[a.ChainName].Timeout,
+	})
+	if err != nil {
+		return err
+	}
+
+	coins, err := chain.ChainProvider.QueryBalanceWithAddress(ctx, a.Address)
+	if err != nil {
+		return err
+	}
+
+	a.Balance = coins.AmountOf(a.Denom)
+
+	return nil
 }
