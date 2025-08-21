@@ -5,7 +5,9 @@ import (
 	"math/big"
 	"strings"
 	"sync"
+	"time"
 
+	"cosmossdk.io/math"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
@@ -50,19 +52,21 @@ func (wb WalletBalanceCollector) Collect(ch chan<- prometheus.Metric) {
 			err := getBalance(ctx, &account, wb.RPCs)
 			if err != nil {
 				status = errorStatus
-
 				log.Error(err.Error(), zap.Any("account", account))
-			} else {
-				// Convert to a big float to get a float64 for metrics
-				balance, _ = big.NewFloat(0.0).SetInt(account.Balance.BigInt()).Float64()
 			}
 
-			ch <- prometheus.MustNewConstMetric(
-				walletBalance,
-				prometheus.GaugeValue,
-				balance,
-				[]string{account.Address, (*wb.RPCs)[account.ChainName].ChainID, account.Denom, status, strings.Join(account.Tags, ",")}...,
-			)
+			for i, denom := range account.Denom {
+				// Convert to a big float to get a float64 for metrics
+				balance, _ = big.NewFloat(0.0).SetInt(account.Balance[i].BigInt()).Float64()
+
+				ch <- prometheus.MustNewConstMetric(
+					walletBalance,
+					prometheus.GaugeValue,
+					balance,
+					[]string{account.Address, (*wb.RPCs)[account.ChainName].ChainID, denom, status, strings.Join(account.Tags, ",")}...,
+				)
+			}
+
 		}(*a)
 	}
 
@@ -86,7 +90,20 @@ func getBalance(ctx context.Context, a *config.Account, rpcs *map[string]config.
 		return err
 	}
 
-	a.Balance = coins.AmountOf(a.Denom)
+	a.Balance = make([]math.Int, len(a.Denom))
+	for i, denom := range a.Denom {
+		time.Sleep(1 * time.Millisecond)
+		if strings.HasPrefix(denom, "ibc/") {
+			denomTrace, err := chain.ChainProvider.QueryDenomTrace(ctx, denom)
+			if err != nil {
+				log.Error("Failed to query denom trace", zap.String("denom", denom), zap.Error(err))
+			} else {
+				a.Denom[i] = denomTrace.BaseDenom
+			}
+		}
+
+		a.Balance[i] = coins.AmountOf(denom)
+	}
 
 	return nil
 }

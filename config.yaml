@@ -146,15 +146,58 @@ accounts:
   # foundation-feegrant-astrovault
   - address: archway1gpyqzc0aerc85cpk2cm8ec6zkc95x5yqrakskv
     chainName: archway
-    denom: aarch
+    denom: ["aarch"]
+    tags: ["tag1", "tag2"]
   # foundation-feegrant-ojo
   - address: archway1c2cu99uzjauaj5hg45edhzgsk5saz43y6d3zxp
     chainName: archway
-    denom: aarch
+    denom: ["aarch"]
   # PhiLabs
   - address: archway1ktka5q3cnsy3ar7qwj2huzz6qj9q4ys7h74l9y
     chainName: archway
-    denom: aarch
+    denom: ["aarch"]
   - address: archway1avwvqzu9gv86g5fxx5p2xqe0w33wklt27jusdrhszwccnfnxx0rsmzz8nu
     chainName: archway
-    denom: aarch
+    denom: ["aarch"]
+  # Bolt Msig
+  - address: archway13dhq9h9myaej7xey5xy8zv49cplh5cche4u7hs8fulmj0d8uansqj92qrv
+    chainName: archway
+    denom:
+      [
+        "aarch",
+        "ibc/0471F1C4E7AFD3F07702BEF6DC365268D64570F7C1FDC98EA6098DD6DE59817B",
+        "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+        "ibc/43897B9739BD63E3A08A88191999C632E052724AB96BD4C74AE31375C991F48D",
+        "ibc/9428981CEA5DA704D99DD51AAB2EC62359178392B667138CD4480B3F6585E71C",
+        "ibc/B68560022FB3CAD599224B16AAEB62FB85848A7674E40B68A0F1982F270B356E",
+      ]
+    tags: ["bolt-protocol-fee"]
+
+  - address: archway1slxnd24x8tt42m5rp2frqg5aq706sww0hj2neqkke4u0e68qz22qwh92u9
+    chainName: archway
+    denom:
+      [
+        "aarch",
+        "ibc/0471F1C4E7AFD3F07702BEF6DC365268D64570F7C1FDC98EA6098DD6DE59817B",
+        "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+        "ibc/43897B9739BD63E3A08A88191999C632E052724AB96BD4C74AE31375C991F48D",
+        "ibc/9428981CEA5DA704D99DD51AAB2EC62359178392B667138CD4480B3F6585E71C",
+        "ibc/B68560022FB3CAD599224B16AAEB62FB85848A7674E40B68A0F1982F270B356E",
+        "ibc/CF57A83CED6CEC7D706631B5DC53ABC21B7EDA7DF7490732B4361E6D5DD19C73",
+      ]
+    tags: ["bolt-outpost-admin"]
+
+  - address: archway1ha3audxnye3xevl24xna97vhst9g8nxe9mw2k8ynmdxeckvd6dzs28tjkh
+    chainName: archway
+    denom:
+      [
+        "aarch",
+        "ibc/0471F1C4E7AFD3F07702BEF6DC365268D64570F7C1FDC98EA6098DD6DE59817B",
+        "ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2",
+        "ibc/43897B9739BD63E3A08A88191999C632E052724AB96BD4C74AE31375C991F48D",
+        "ibc/9428981CEA5DA704D99DD51AAB2EC62359178392B667138CD4480B3F6585E71C",
+        "ibc/B68560022FB3CAD599224B16AAEB62FB85848A7674E40B68A0F1982F270B356E",
+        "ibc/C2CFB1C37C146CF95B0784FD518F8030FEFC76C5800105B1742FB65FFE65F873",
+        "ibc/CF57A83CED6CEC7D706631B5DC53ABC21B7EDA7DF7490732B4361E6D5DD19C73",
+      ]
+    tags: ["bolt-lp"]

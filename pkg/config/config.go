@@ -28,10 +28,10 @@ var (
 )
 
 type Account struct {
-	Address   string `yaml:"address" validate:"required"`
-	Denom     string `yaml:"denom" validate:"required"`
-	ChainName string `yaml:"chainName" validate:"required"`
-	Balance   math.Int
+	Address   string   `yaml:"address" validate:"required"`
+	Denom     []string `yaml:"denom" validate:"required"`
+	ChainName string   `yaml:"chainName" validate:"required"`
+	Balance   []math.Int
 	Tags      []string `yaml:"tags,omitempty"`
 }
 
