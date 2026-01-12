@@ -93,7 +93,6 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 
 			if err != nil {
 				status = errorStatus
-
 				log.Error(err.Error())
 			}
 
