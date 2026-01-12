@@ -43,6 +43,12 @@ type Channel struct {
 }
 
 func GetClientsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsInfo, error) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.GetLogger().Sugar().Debugf("Recovered from panic:", r)
+		}
+	}()
+
 	clientsInfo := ClientsInfo{}
 
 	cdA := chain.Info{
