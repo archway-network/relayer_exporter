@@ -42,14 +42,15 @@ type Channel struct {
 	}
 }
 
-func GetClientsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]config.RPC) (ClientsInfo, error) {
+func GetClientsInfo(ctx context.Context, ibc *config.IBCData, rpcs *map[string]config.RPC) (clientsInfo ClientsInfo, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.GetLogger().Sugar().Debugf("Recovered from panic:", r)
+			log.GetLogger().Sugar().Debugw("Recovered from panic:", r)
+
+			clientsInfo = ClientsInfo{}
+			err = fmt.Errorf("panic occurred: %v", r)
 		}
 	}()
-
-	clientsInfo := ClientsInfo{}
 
 	cdA := chain.Info{
 		ChainID:  (*rpcs)[ibc.Chain1.ChainName].ChainID,
