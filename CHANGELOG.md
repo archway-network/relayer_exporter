@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.1](https://github.com/archway-network/relayer_exporter/compare/v0.16.0...v0.16.1) (2026-01-12)
+
+
+### Bug Fixes
+
+* add recover for panic in dependency methods ([#47](https://github.com/archway-network/relayer_exporter/issues/47)) ([67c45fb](https://github.com/archway-network/relayer_exporter/commit/67c45fbd82669f25fba2ed008e3dba568cf1442f))
+
 ## [0.16.0](https://github.com/archway-network/relayer_exporter/compare/v0.15.0...v0.16.0) (2025-03-07)
 
 
