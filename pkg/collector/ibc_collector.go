@@ -52,7 +52,10 @@ var (
 	configMissing = prometheus.NewDesc(
 		configMissingMetricName,
 		"Returns if the rpc config is missing for a channel.",
-		[]string{"src_chain_id", "dst_chain_id", "src_chain_name", "dst_chain_name"},
+		[]string{
+			"chain_name",
+			"client_id",
+		},
 		nil,
 	)
 )
@@ -90,6 +93,9 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 			// Client info
 			ci, err := ibc.GetClientsInfo(ctx, path, cc.RPCs)
 			status := successStatus
+
+			checkMissingRPCConfig(path.Chain1, *cc.RPCs, ch)
+			checkMissingRPCConfig(path.Chain2, *cc.RPCs, ch)
 
 			if err != nil {
 				status = errorStatus
@@ -177,4 +183,21 @@ func (cc IBCCollector) Collect(ch chan<- prometheus.Metric) {
 	wg.Wait()
 
 	log.Debug("Stop collecting", zap.String("metric", clientExpiryMetricName))
+}
+
+func checkMissingRPCConfig(chain config.IBCChainMeta, rpcs map[string]config.RPC, ch chan<- prometheus.Metric) {
+	isMissing := 0
+	_, ok := rpcs[chain.ChainName]
+	if !ok {
+		isMissing = 1
+	}
+	ch <- prometheus.MustNewConstMetric(
+		configMissing,
+		prometheus.GaugeValue,
+		float64(isMissing),
+		[]string{
+			chain.ChainName,
+			chain.ClientID,
+		}...,
+	)
 }
